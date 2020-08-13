@@ -1,0 +1,61 @@
+========
+ SERVER
+========
+
+OBJECTIVE:
+Store users' flights so they can use them on multiple devices
+Users flights are stored as a blob of bytes in an encrypted file
+File is encrypted with password
+File is named "username"
+
+Design:
+- All Strings encoded UTF-8, so one Byte per character
+- Every transmission starts with JOOZDLOG#### to identify messages.
+    JOOZDLOG
+    #### is 4 bytes making an Int which states the length of the message AFTER THIS HEADER
+    Example:
+        message:        "Hoi!"
+        transmission:   "JOOZDLOGx0x0x0x4Hoi!"
+- formats:
+    A: List of pairs of ID's + timestamps:
+        in: put all data in a list of pairs, change that list to one long bytearray
+            val list: List<Pair<Int,Long>> = flightsList.map{(it.ID to it.timeStamp).toBytearray()}
+            return list.map{it.toList()}.flatten().toByteArray()
+        out: Collect all bytes, snap in pieces of 12, first 4 of each is ID, last 8 Timestamp:
+            val rawPairs = bytesStream.toList().chuncked(12)
+            val decodedPairs = rawPairs.map{pairIntLongFromBytes(it)}
+
+    B: A list of Ints,
+
+
+
+Protocol:
+- Client contacts server, saying username/password
+- Server checks if file [username] exists, if so, it loads flights/aircraft from files
+- server responds "OK" or "UNKNOWN_USER"<make registration for users?> or "WRONG_PASSWORD"
+
+- Client asks for timestamp
+- Client asks for all changes since last sync (ie. last timestamp from server)
+- server sends them (can be empty)
+[if new flights on client]:
+    - client adjusts flightIDs of new flights so they won't conflict with flights on server
+    - Client responds with a list of new and changed flights, as serialized BasicFlights
+    - Server adds flights to list, sends OK
+    - client sends timestamp to go with this sync
+    - server sends OK
+    - client sends "save" command
+    - server sends OK
+    - Client marks flights as "known to server"
+    - Client saves timestamp as time of previous synch
+
+
+
+
+<Same but for aircraft>
+
+
+-> if no response other than "OK" needed, response is "OK"
+
+- client can also do:
+- REQUEST_AIRPORT_DB_VERSION
+- REQUEST_AIRPORTS_DB
