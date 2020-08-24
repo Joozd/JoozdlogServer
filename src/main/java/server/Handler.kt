@@ -1,10 +1,8 @@
 package server
 
-import nl.joozd.joozdlogcommon.BasicFlight
 import nl.joozd.joozdlogcommon.LoginData
 import nl.joozd.joozdlogcommon.comms.JoozdlogCommsKeywords
 import nl.joozd.joozdlogcommon.serializing.*
-import storage.AirportsStorage
 import storage.FlightsStorage
 import storage.UserAdministration
 import utils.Logger
@@ -24,7 +22,9 @@ class Handler(private val socket: IOWorker): Closeable {
     fun handleAll(){
         var keepGoing = true
         var flightsStorage: FlightsStorage? = null
-        var protocolVersion: Int? = null
+
+        @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+        var protocolVersion: Int? = null // not used at the moment, but useful when updating protocol
 
         while (keepGoing) {
             val receivedMessage = socket.read()
@@ -33,7 +33,7 @@ class Handler(private val socket: IOWorker): Closeable {
                 val extraData = receivedMessage.slice(wrap(request).size until receivedMessage.size).toByteArray()
                 log.d("DEBUG: received request: $request from ${socket.clientAddress}")
                 when (request){ // keep this in same order as JoozdlogComsKeywords pls
-                    JoozdlogCommsKeywords.HELLO -> protocolVersion = intFromBytes(extraData)
+                    JoozdlogCommsKeywords.HELLO -> protocolVersion = intFromBytes(extraData) // not used at the moment, but useful when updating protocol
 
                     JoozdlogCommsKeywords.NEXT_IS_COMPRESSED -> TODO("not implemented")
 
@@ -79,8 +79,14 @@ class Handler(private val socket: IOWorker): Closeable {
 
                     /**
                      * Decrypts users flights, changes its password, and encrypts data with new pass
+                     * On success updates [flightsStorage]
+                     * Expects a bytearray as key as [extraData]
                      */
-                    JoozdlogCommsKeywords.UPDATE_PASSWORD -> TODO("not implemented")
+                    JoozdlogCommsKeywords.UPDATE_PASSWORD -> {
+                        ServerFunctions.changePassword(socket, flightsStorage, extraData)?.let{
+                            flightsStorage = it
+                        }
+                    }
 
 
                     /**
@@ -110,14 +116,12 @@ class Handler(private val socket: IOWorker): Closeable {
                     JoozdlogCommsKeywords.REQUEST_FLIGHTS_SINCE_TIMESTAMP  -> {
                         if (flightsStorage?.correctKey != true)
                             socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN)
-                        if (flightsStorage?.flightsFile == null)
-                            socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
-                        else{
+                        flightsStorage?.flightsFile?.let{ff ->
                             val timeStamp = unwrapLong(extraData)
-                            println("available flights: ${flightsStorage.flightsFile?.flights?.size}")
-                            println("sending ${flightsStorage.flightsFile?.flights?.filter { it.timeStamp > timeStamp }?.size} flights!")
-                            socket.write(flightsStorage.filteredFlightsAsBytes { it.timeStamp > timeStamp } ?: JoozdlogCommsKeywords.NOT_LOGGED_IN.toByteArray(Charsets.UTF_8))
-                        }
+                            println("available flights: ${ff.flights.size}")
+                            println("sending ${ff.flights.filter { it.timeStamp > timeStamp }.size} flights!")
+                            socket.write(flightsStorage?.filteredFlightsAsBytes { it.timeStamp > timeStamp } ?: JoozdlogCommsKeywords.NOT_LOGGED_IN.toByteArray(Charsets.UTF_8))
+                        } ?: socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
                     }
 
 
@@ -168,7 +172,7 @@ class Handler(private val socket: IOWorker): Closeable {
                         flightsStorage?.let { storage ->
                             if (storage.writeFlightsToDisk()) {
                                 socket.write(JoozdlogCommsKeywords.OK)
-                                println("Successfully wrote ${storage.flightsFile?.flights?.size} flights! to disk for user ${flightsStorage.loginData.userName}")
+                                println("Successfully wrote ${storage.flightsFile?.flights?.size} flights! to disk for user ${storage.loginData.userName}")
                             } else {
                                 println("Write problem")
                                 socket.write(JoozdlogCommsKeywords.SERVER_ERROR)

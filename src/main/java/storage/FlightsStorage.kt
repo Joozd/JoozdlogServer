@@ -24,14 +24,14 @@ import java.time.Instant
  */
 class FlightsStorage(val loginData: LoginData) {
     init{
-        println("Init FligtsStorage")
+        println("Init FlightsStorage")
         println("name: ${loginData.userName}")
     }
     private val file = File("./userfiles/${loginData.userName}")
     private val hash = SHACrypto.hashWithSalt(loginData.userName, loginData.password)
     private val requestedVersion = loginData.basicFlightVersion
 
-    val fileExists: Boolean
+    private val fileExists: Boolean
         get() = file.exists()
 
     val correctKey: Boolean by lazy {

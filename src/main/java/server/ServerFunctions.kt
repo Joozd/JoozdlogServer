@@ -9,6 +9,10 @@ import nl.joozd.joozdlogcommon.serializing.toByteArray
 import nl.joozd.joozdlogcommon.serializing.unpackSerialized
 import nl.joozd.joozdlogcommon.serializing.wrap
 import storage.AirportsStorage
+import storage.FlightsStorage
+import storage.UserAdministration
+import utils.Logger
+import java.io.IOException
 import java.time.Instant
 
 
@@ -93,4 +97,16 @@ object ServerFunctions {
             socket.write(wrap(AirportsStorage.version))
         else
             socket.write(wrap(-1)) // -1 means SERVER_ERROR in this case
+    fun changePassword(socket: IOWorker, flightsStorage: FlightsStorage?, newKey: ByteArray): FlightsStorage? {
+        if (flightsStorage?.correctKey == false) return socket.write(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS).run{null}
+        if (flightsStorage == null) return socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN).run{null}
+        return try {
+             UserAdministration.updatePassword(flightsStorage, newKey)
+        } catch (e: IOException){
+            socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
+            Logger.singleton.e("changePassword failed: ${e.message}")
+            return null
+        }
+    }
+
 }

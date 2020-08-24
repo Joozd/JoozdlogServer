@@ -11,6 +11,6 @@ object SHACrypto {
     fun hashWithSalt(salt: ByteArray, item: ByteArray) =
         MessageDigest.getInstance("SHA-256").digest(salt + item)
 
-    fun hashWithSalt(salt: String, item: ByteArray) =
+    fun hashWithSalt(salt: String, item: ByteArray): ByteArray =
         MessageDigest.getInstance("SHA-256").digest(salt.toByteArray() + EXTRA_SALT + item)
 }
