@@ -1,14 +1,17 @@
 package storage
 
 import crypto.SHACrypto
+import nl.joozd.joozdlogcommon.BasicFlight
 import nl.joozd.joozdlogcommon.LoginData
 import nl.joozd.joozdlogcommon.serializing.toByteArray
+import utils.Logger
 import java.io.File
 import java.io.IOException
 import java.time.Instant
 
 object UserAdministration {
     const val EMPTY_FLIGHT_LIST = 0
+    private val log = Logger.singleton
     /**
      * Checks if a user already exists (if so will return null)
      * Otherwise, it will
@@ -26,27 +29,19 @@ object UserAdministration {
         return makeNewFile(loginData)
     }
 
-    /**
-     * Changes a users password
-     * What this actually does:
-     * - overwrite "flights" file with new hash and timestamp
-     *  @param name: username
-     *  @param key: AES encryption key as ByteArray
-     *  @return FlightsStorage if user exists, null if not or if somehow saving hash failed
-     */
-    private fun makeNewFile(loginData: LoginData): FlightsStorage? {
-        if (!File("./userfiles/${loginData.userName}").exists()) return null
 
-        File("./userfiles/${loginData.userName}").outputStream().use{
-            val hash = SHACrypto.hashWithSalt(loginData.userName, loginData.password)
-            val version = EMPTY_FLIGHT_LIST.toByteArray()
-            val timestamp = Instant.now().epochSecond.toByteArray()
-            it.write(hash + version + timestamp)
-            it.flush()
-        }
+    private fun makeNewFile(loginData: LoginData, flights: List<BasicFlight>? = null): FlightsStorage? {
+        if (!File("./userfiles/${loginData.userName}").exists()) return null
+        val hash = SHACrypto.hashWithSalt(loginData.userName, loginData.password)
+        val version = EMPTY_FLIGHT_LIST.toByteArray()
+        val timestamp = Instant.now().epochSecond
+        val timestampBytes = timestamp.toByteArray()
+        File("./userfiles/${loginData.userName}").writeBytes(hash + version + timestampBytes)
+
+
         return if (File("./userfiles/${loginData.userName}").inputStream().use{it.readNBytes(32)}?.contentEquals(SHACrypto.hashWithSalt(loginData.userName, loginData.password)) == true) {
             println("password set for user ${loginData.userName}")
-            FlightsStorage(loginData)
+            FlightsStorage(loginData, FlightsFile(timestamp, flights?: emptyList()))
         }
         else null
     }
@@ -57,11 +52,12 @@ object UserAdministration {
     fun updatePassword(flightsStorage: FlightsStorage, newKey: ByteArray): FlightsStorage? {
         if (!flightsStorage.correctKey) return null
         val knownFlights = flightsStorage.flightsFile?.flights
-        knownFlights?.let{
+        knownFlights?.let{ kf ->
             val newLoginData = flightsStorage.loginData.copy(password =  newKey)
-            makeNewFile(newLoginData)
-            return FlightsStorage(newLoginData).apply {
+            return makeNewFile(newLoginData, kf)?.apply {
+                log.n("writing files to disk...")
                 if (!writeFlightsToDisk()) throw (IOException("Unable to write flights to disk"))
+                log.d("returning from updatePassword")
             }
         }
         throw (IOException("corrupt file or read error"))

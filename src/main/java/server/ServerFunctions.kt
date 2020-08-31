@@ -97,15 +97,17 @@ object ServerFunctions {
             socket.write(wrap(AirportsStorage.version))
         else
             socket.write(wrap(-1)) // -1 means SERVER_ERROR in this case
+
     fun changePassword(socket: IOWorker, flightsStorage: FlightsStorage?, newKey: ByteArray): FlightsStorage? {
         if (flightsStorage?.correctKey == false) return socket.write(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS).run{null}
         if (flightsStorage == null) return socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN).run{null}
         return try {
-             UserAdministration.updatePassword(flightsStorage, newKey)
+            UserAdministration.updatePassword(flightsStorage, newKey)?.also{
+                socket.write(JoozdlogCommsKeywords.OK)
+            }
         } catch (e: IOException){
-            socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
             Logger.singleton.e("changePassword failed: ${e.message}")
-            return null
+            null
         }
     }
 

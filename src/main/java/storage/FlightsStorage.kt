@@ -8,6 +8,7 @@ import nl.joozd.joozdlogcommon.LoginData
 import nl.joozd.joozdlogcommon.legacy.basicflight.BasicFlightVersionFunctions
 import nl.joozd.joozdlogcommon.serializing.intFromBytes
 import nl.joozd.joozdlogcommon.serializing.longFromBytes
+import utils.Logger
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
@@ -22,7 +23,8 @@ import java.time.Instant
  *      - if version is 0, no flights stored (only hash, version, timestamp)
  * - 8 bytes making a timestamp of when the file was last saved
  */
-class FlightsStorage(val loginData: LoginData) {
+class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: FlightsFile? = null) {
+    private val log = Logger.singleton
     init{
         println("Init FlightsStorage")
         println("name: ${loginData.userName}")
@@ -47,7 +49,7 @@ class FlightsStorage(val loginData: LoginData) {
      * @return null if file not found/not OK, FlightsFile if it is OK
      */
 
-    val flightsFile: FlightsFile? by lazy {
+    val flightsFile: FlightsFile? by lazy { forcedFlightsFile ?:
         if (!correctKey || file.length() < 32+4+8) null // might split this out and add logging or whatever
         else {
             try {
@@ -79,10 +81,7 @@ class FlightsStorage(val loginData: LoginData) {
      */
     private fun writeStuffToFile(stuff: ByteArray): Boolean{
         return try {
-            BufferedOutputStream(file.outputStream()).use {
-                it.write(stuff)
-                it.flush()
-            }
+            file.writeBytes(stuff)
             true
         } catch (e: Exception){
             e.printStackTrace()
@@ -92,9 +91,12 @@ class FlightsStorage(val loginData: LoginData) {
 
 
     fun checkKey(){
-        println("Hashed key: \n")
-        println("\nExpected key: \n")
-        println(file.readNBytes(32).toList())
+        if (!fileExists) println("No file")
+        else {
+            println("Hashed key: \n")
+            println("\nExpected key: \n")
+            println(file.readNBytes(32).toList())
+        }
     }
 
     fun addFlights(rawData: ByteArray): Boolean = flightsFile?.let { fFile ->
@@ -109,8 +111,12 @@ class FlightsStorage(val loginData: LoginData) {
     } ?: false // if flightsFile is null (not logged in)
 
     fun writeFlightsToDisk(): Boolean = flightsFile?.let{ fFile ->
+        log.d("Encrypting flights...")
         fFile.toEncryptedByteArray(loginData.password)?.let {
-            writeStuffToFile(hash + it) // returned `null` will become `false`
+            log.d("Writing encrypted flights to disk...")
+            writeStuffToFile(hash + it).also{
+                log.d("Done writing to disk")
+            } // returned `null` will become `false`
         }
     } ?: false // if writeStuffToFile fails, or if flightsFile is null (not logged in)
 
