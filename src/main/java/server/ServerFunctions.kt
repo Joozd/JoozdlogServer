@@ -17,6 +17,7 @@ import java.time.Instant
 
 
 object ServerFunctions {
+    private val log = Logger.singleton
     /**
      * Sends current time as to client as seconds since epoch
      * @param socket: IOWorker to take care of transmission to client
@@ -103,10 +104,12 @@ object ServerFunctions {
         if (flightsStorage == null) return socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN).run{null}
         return try {
             UserAdministration.updatePassword(flightsStorage, newKey)?.also{
-                socket.write(JoozdlogCommsKeywords.OK)
+                socket.write(JoozdlogCommsKeywords.OK).also{
+                    log.n("Password changed for ${flightsStorage.loginData.userName}", "changePassword")
+                }
             }
         } catch (e: IOException){
-            Logger.singleton.e("changePassword failed: ${e.message}")
+            log.e("changePassword failed: ${e.message}", "changePassword")
             null
         }
     }

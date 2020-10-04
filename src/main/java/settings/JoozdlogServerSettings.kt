@@ -17,14 +17,14 @@ class JoozdlogServerSettings<T>(private val settingsMap: Map<String, String>, pr
             if (this == null) return defaultValue
             @Suppress("UNCHECKED_CAST")
             return when (defaultValue) {
-                is Boolean -> this.toBoolean()
-                is Int -> this.toInt()
-                is Long -> this.toLong()
-                is Float -> this.toFloat()
-                is Double -> this.toDouble()
-                is String -> this
+                is Boolean -> this.toBoolean() as T
+                is Int -> this.toInt() as T
+                is Long -> this.toLong() as T
+                is Float -> this.toFloat() as T
+                is Double -> this.toDouble() as T
+                is String -> this as T
                 else -> throw IllegalArgumentException()
-            } as T
+            }
         }
     }
 /*

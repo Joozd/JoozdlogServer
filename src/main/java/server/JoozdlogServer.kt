@@ -33,7 +33,7 @@ import javax.net.ssl.SSLServerSocketFactory
 /**
  * Constructs a ClassFileServer.
  *
- * @param path the path where the server locates files
+ *
  */
 class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
  {
@@ -68,6 +68,7 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
             log.newLine()
             log.n("*******************************")
             log.n("*** Starting JoozdlogServer ***")
+            log.n("*** Logging level: ${log.level.toString().padStart(2, ' ')}       ***")
             log.n("*******************************")
             log.newLine()
 

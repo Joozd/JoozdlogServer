@@ -12,7 +12,7 @@ object Settings {
 
     val logFile: String by JoozdlogServerSettings(settings, "ERROR")
     val verboseLogFile: String by JoozdlogServerSettings(settings, "ERROR")
-    val logLevel: Int by JoozdlogServerSettings(settings, 4)
+    val logLevel: Int by JoozdlogServerSettings(settings, 2)
 
     val aircraftFile: String by JoozdlogServerSettings(settings, "ERROR")
     val consensusFile: String by JoozdlogServerSettings(settings, "ERROR")

@@ -1,5 +1,10 @@
 package utils
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -17,65 +22,109 @@ class Logger(
     var outputToConsole: Boolean = false,
     var level: Int = NORMAL,
     var addTimestamp: Boolean = false,
-    var timestampFormat: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+    var timestampFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd-kk:mm:ss.SSS"),
     var showErrors: Boolean = true,
     var showWarnings: Boolean = true
+): CoroutineScope {
+    override val coroutineContext = Dispatchers.IO
 
-) {
     private val timeStamp: String
-        get() = if (addTimestamp) LocalDateTime.now(ZoneOffset.UTC).format(timestampFormat) else ""
+        get() = if (addTimestamp) "${LocalDateTime.now(ZoneOffset.UTC).format(timestampFormat)} - " else ""
+
+    private var mostRecentTag: String? = null
+
+    private val tagLock = Mutex()
+    private val lineLock = Mutex()
 
     /**
      * Logs a message as NORMAL unless [messageLevel] is set
      */
-    fun log(message: String, messageLevel: Int = NORMAL){
+    fun log(message: String, messageLevel: Int = NORMAL, tag: String? = null){
         when(messageLevel){
-            NORMAL -> n(message)
+            NORMAL -> n(message, tag)
             DEBUG -> d(message)
-            VERBOSE -> v(message)
+            VERBOSE -> v(message, tag)
         }
     }
 
     /**
      * Log something that is normally logged (logged on all levels except NOTHING)
      */
-    fun n(message: String) {
-        if (level >= NORMAL) {
-            cOut("N/$timeStamp - $message")
-            //TODO make this log to normal logfile and verbose logfile
+    fun n(message: String, tag: String? = null) {
+        launch {
+            lineLock.withLock {
+                if (level >= NORMAL)
+                    verboseLogFile?.appendText("N/$timeStamp${message.addTag(tag)}\n")
+                if (level == NORMAL)
+                    logFile?.appendText("N/$timeStamp${message.addTag(tag)}\n")
+                        ?: cOut("N/$timeStamp${message.addTag(tag)}\n")
+            }
         }
     }
 
     /**
      * Log something that is logged when debugging
-     * This will only end up in logfile when level is DEBUG.
-     * Will show in console if level is DEBUG or higher
+     * This will end up in verbose logfile when level is DEBUG.
+     * Will never end up in normal logfile.
+     * Debug messages do not have a tag.
      */
     fun d(message: String) {
-        if (level >= DEBUG)
-            cOut("D/$timeStamp - $message")
-        if (level == DEBUG) {
-        //TODO make this log to normal logfile and verbose logfile
+        launch {
+            lineLock.withLock {
+                if (level == DEBUG) {
+                    verboseLogFile?.appendText("D/$timeStamp$message\n") ?: cOut("D/$timeStamp$message\n")
+                }
+            }
         }
     }
 
     /**
      * Log something that is logged when verbose (includes NORMAL, DEBUG and VERBOSE)
      */
-    fun v(message: String) {
-        verboseLogFile?.let{
-            // log to verbose file no matter what
+    fun v(message: String, tag: String? = null) {
+        launch {
+            lineLock.withLock {
+                verboseLogFile?.appendText("V/$timeStamp${message.addTag(tag)}\n")
+                if (level >= VERBOSE)
+                    logFile?.appendText("V/$timeStamp${message.addTag(tag)}\n")
+                        ?: cOut("V/$timeStamp${message.addTag(tag)}\n")
+            }
         }
-        if (level >= VERBOSE)
-            cOut("V/$timeStamp - $message")
-            // verbose logs to normal logFile if this is set
     }
 
-    fun e(message: String) {
-        if (showErrors) {
-            cOut("E/$timeStamp - $message")
-            // log to normal and verbose
+    /**
+     * Log a warning
+     */
+    fun w(message: String, tag: String? = null) {
+        launch {
+            lineLock.withLock {
+                verboseLogFile?.appendText("W/$timeStamp${message.addTag(tag)}\n")
+                if (showErrors)
+                    logFile?.appendText("W/$timeStamp${message.addTag(tag)}\n")
+                        ?: cOut("W/$timeStamp${message.addTag(tag)}\n")
+            }
         }
+    }
+
+    /**
+     * Log an error
+     */
+    fun e(message: String, tag: String? = null) {
+        launch {
+            lineLock.withLock {
+                verboseLogFile?.appendText("E/$timeStamp${message.addTag(tag)}\n")
+                if (showErrors) {
+                    logFile?.appendText("E/$timeStamp${message.addTag(tag)}\n") ?: cOut(
+                        "E/$timeStamp${
+                            message.addTag(
+                                tag
+                            )
+                        }\n"
+                    )
+                }
+            }
+        }
+
     }
 
     fun newLine(){
@@ -88,17 +137,37 @@ class Logger(
         if (outputToConsole) println(text)
     }
 
+    /**
+     * Adds a tag to a string if [tag] is not null
+     * If [tag] is the same as [mostRecentTag] it is replaced by spaces for easier readabiliy
+     */
+    private suspend fun String.addTag(tag: String?): String {
+        tagLock.withLock {
+            val nonDuplicateTag: String? = when {
+                tag != mostRecentTag -> {
+                    mostRecentTag = tag
+                    tag
+                }
+                tag == null -> null
+                else -> " ".repeat(tag.length)
+            }
+            return listOfNotNull(nonDuplicateTag, this).joinToString(": ")
+        }
+    }
+
+
 
     companion object{
         const val NOTHING = 0
         const val NORMAL = 1
-        const val DEBUG = 2
-        const val VERBOSE = 3 // verbose is always logged to verbose file if that is provided
+        const val VERBOSE = 2 // verbose is always logged to verbose file if that is provided
+        const val DEBUG = 3
 
         //singleton implementation
-        val singleton: Logger = Logger()
+        val singleton: Logger = Logger(File("joozdlogserver_verbose.log"), File("joozdlogserver.log"))
 
     }
+
 
 
 }

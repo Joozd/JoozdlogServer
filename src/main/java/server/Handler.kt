@@ -15,8 +15,12 @@ import kotlin.collections.toByteArray
  * Handler should be closed after usage, which will close the IOWorker
  * @param socket: an open IOWorker to be used for communications
  */
+
 class Handler(private val socket: IOWorker): Closeable {
     private val log = Logger.singleton
+
+    private val TAG: String?
+        get() = this::class.simpleName
 
 
     fun handleAll(){
@@ -33,7 +37,10 @@ class Handler(private val socket: IOWorker): Closeable {
                 val extraData = receivedMessage.slice(wrap(request).size until receivedMessage.size).toByteArray()
                 log.d("DEBUG: received request: $request from ${socket.clientAddress}")
                 when (request){ // keep this in same order as JoozdlogComsKeywords pls
-                    JoozdlogCommsKeywords.HELLO -> protocolVersion = intFromBytes(extraData) // not used at the moment, but useful when updating protocol
+                    JoozdlogCommsKeywords.HELLO -> {
+                        @Suppress("UNUSED_VALUE")
+                        protocolVersion = intFromBytes(extraData)
+                    } // not used at the moment, but useful when updating protocol
 
                     JoozdlogCommsKeywords.NEXT_IS_COMPRESSED -> TODO("not implemented")
 
@@ -46,7 +53,8 @@ class Handler(private val socket: IOWorker): Closeable {
                     JoozdlogCommsKeywords.LOGIN -> {
                         val loginData = LoginData.deserialize(extraData)
                         flightsStorage = FlightsStorage(loginData)
-                        log.n("login for ${loginData.userName} ok = ${flightsStorage.correctKey}")
+                        log.n("login attempt for ${loginData.userName} from ${socket.clientAddress}", TAG)
+                        log.n(if (flightsStorage.correctKey) "success" else "failed", TAG)
                         /*
                         - Server checks if file [username] exists, if so, it loads flights/aircraft from files
                         - server responds "OK" or "UNKNOWN_USER"<make registration for users?> or "WRONG_PASSWORD"
@@ -98,15 +106,16 @@ class Handler(private val socket: IOWorker): Closeable {
                     //TODO work should be done by worker not by handler
                     JoozdlogCommsKeywords.SENDING_FLIGHTS -> {
                         flightsStorage?.let{storage ->
-                            if (storage.addFlights(extraData)) {
-                                println("saved OK")
+                            storage.addFlights(extraData)?.let {
                                 socket.write(JoozdlogCommsKeywords.OK)
-                            }
-                            else {
-                                println("error while saving")
+                                log.n("received $it flights from client", TAG)
+                            } ?: run {
+                                log.e("error while adding flights from client ${socket.clientAddress}", TAG)
                                 socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
                             }
-                        } ?: socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN)
+                        } ?: socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN).also{
+                            log.w("user at ${socket.clientAddress} wanted to send flights while not logged in", TAG)
+                        }
                     }
 
                     /**
@@ -118,10 +127,11 @@ class Handler(private val socket: IOWorker): Closeable {
                             socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN)
                         flightsStorage?.flightsFile?.let{ff ->
                             val timeStamp = unwrapLong(extraData)
-                            println("available flights: ${ff.flights.size}")
-                            println("sending ${ff.flights.filter { it.timeStamp > timeStamp }.size} flights!")
+                            log.n("sending ${ff.flights.filter { it.timeStamp > timeStamp }.size} flights to client", TAG)
                             socket.write(flightsStorage?.filteredFlightsAsBytes { it.timeStamp > timeStamp } ?: JoozdlogCommsKeywords.NOT_LOGGED_IN.toByteArray(Charsets.UTF_8))
-                        } ?: socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
+                        } ?: socket.write(JoozdlogCommsKeywords.SERVER_ERROR).also{
+                            log.e("server error while sending flights to ${socket.clientAddress}")
+                        }
                     }
 
 
@@ -155,11 +165,11 @@ class Handler(private val socket: IOWorker): Closeable {
                         flightsStorage?.flightsFile?.timestamp = timestamp
                         if (flightsStorage?.flightsFile?.timestamp == timestamp) {// not in case left half is null
                             socket.write(JoozdlogCommsKeywords.OK)
-                            println("Timestamp successfully updated to $timestamp")
+                            log.d("Timestamp successfully updated to $timestamp")
                         }
                         else {
                             socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
-                            println("error: Timestamp doesn't match.\nflightsStorage: $flightsStorage\ntimestamp: ${flightsStorage?.flightsFile?.timestamp}")
+                            log.e("error: Timestamp doesn't match.\nflightsStorage: $flightsStorage\ntimestamp: ${flightsStorage?.flightsFile?.timestamp}", TAG)
                         }
                     }
 
@@ -172,9 +182,9 @@ class Handler(private val socket: IOWorker): Closeable {
                         flightsStorage?.let { storage ->
                             if (storage.writeFlightsToDisk()) {
                                 socket.write(JoozdlogCommsKeywords.OK)
-                                println("Successfully wrote ${storage.flightsFile?.flights?.size} flights! to disk for user ${storage.loginData.userName}")
+                                log.n("Successfully saved all ${storage.flightsFile?.flights?.size} flights to disk for user ${storage.loginData.userName}", TAG)
                             } else {
-                                println("Write problem")
+                                log.e("Write problem while wroting flights to disk for ${socket.clientAddress}")
                                 socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
                             }
                         }
@@ -182,22 +192,19 @@ class Handler(private val socket: IOWorker): Closeable {
 
                     JoozdlogCommsKeywords.END_OF_SESSION -> {
                         keepGoing = false
-                        println("Closing connection.\n")
+                        log.d("Closing connection.\n")
                         socket.close()
                     }
 
                     else -> {                                               // unknown request will close connection
-                        println("unknown request: $request, closing connection")
+                        log.v("unknown request: $request from ${socket.clientAddress}, closing connection")
                         keepGoing = false
                     }
                 }
 
 
-
-
-
             } else {
-                println("Invalid request, stopping handleAll()")
+                log.v("Invalid request from ${socket.clientAddress}, stopping handleAll()")
                 keepGoing = false
             }
                                 

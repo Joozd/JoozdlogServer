@@ -47,6 +47,8 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
     /**
      * Reads file into a FLightsFile object
      * @return null if file not found/not OK, FlightsFile if it is OK
+     *
+     * unpackWithVersion takes care of upgrading to most recent version,
      */
 
     val flightsFile: FlightsFile? by lazy { forcedFlightsFile ?:
@@ -99,7 +101,7 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
         }
     }
 
-    fun addFlights(rawData: ByteArray): Boolean = flightsFile?.let { fFile ->
+    fun addFlights(rawData: ByteArray): Int? = flightsFile?.let { fFile ->
         // println("received ${serialized.size} flights")
         val newFlights = BasicFlightVersionFunctions.unpackWithVersion(rawData, requestedVersion)
         fFile.timestamp = Instant.now().epochSecond
@@ -107,8 +109,8 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
 
         //build list of known flights + new flights, where duplicate IDs are overwritten by new flights
         fFile.flights = fFile.flights.filter{f -> f.flightID !in newFlightIDs} + newFlights
-        true
-    } ?: false // if flightsFile is null (not logged in)
+        newFlights.size
+    }  // = null if flightsFile is null (not logged in)
 
     fun writeFlightsToDisk(): Boolean = flightsFile?.let{ fFile ->
         log.d("Encrypting flights...")
