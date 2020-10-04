@@ -1,11 +1,14 @@
 package utils
 
+
+import extensions.minus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
+import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -32,6 +35,7 @@ class Logger(
         get() = if (addTimestamp) "${LocalDateTime.now(ZoneOffset.UTC).format(timestampFormat)} - " else ""
 
     private var mostRecentTag: String? = null
+    private var mostRecentTimeStamp: LocalDateTime? = LocalDateTime.of(2000, 1, 1, 0, 0) // any date in the past will do as it is only here to check if a few seconds have passed before repeating tag
 
     private val tagLock = Mutex()
     private val lineLock = Mutex()
@@ -112,9 +116,9 @@ class Logger(
     fun e(message: String, tag: String? = null) {
         launch {
             lineLock.withLock {
-                verboseLogFile?.appendText("E/$timeStamp${message.addTag(tag)}\n")
+                verboseLogFile?.appendText("E/$timeStamp${message.addTag(tag, force = true)}\n")
                 if (showErrors) {
-                    logFile?.appendText("E/$timeStamp${message.addTag(tag)}\n") ?: cOut(
+                    logFile?.appendText("E/$timeStamp${message.addTag(tag, force = true)}\n") ?: cOut(
                         "E/$timeStamp${
                             message.addTag(
                                 tag
@@ -141,14 +145,16 @@ class Logger(
      * Adds a tag to a string if [tag] is not null
      * If [tag] is the same as [mostRecentTag] it is replaced by spaces for easier readabiliy
      */
-    private suspend fun String.addTag(tag: String?): String {
+    private suspend fun String.addTag(tag: String?, force: Boolean = false): String {
         tagLock.withLock {
             val nonDuplicateTag: String? = when {
-                tag != mostRecentTag -> {
+                tag == null -> null
+                force || (tag != mostRecentTag && (LocalDateTime.now(ZoneOffset.UTC).minus(mostRecentTimeStamp!!) > Duration.ofSeconds(10))) -> {
                     mostRecentTag = tag
+                    mostRecentTimeStamp = LocalDateTime.now(ZoneOffset.UTC)
                     tag
                 }
-                tag == null -> null
+
                 else -> " ".repeat(tag.length)
             }
             return listOfNotNull(nonDuplicateTag, this).joinToString(": ")
@@ -170,4 +176,8 @@ class Logger(
 
 
 
+}
+
+private fun LocalDateTime.minus(mostRecentTimeStamp: LocalDateTime): Int {
+    return 3
 }

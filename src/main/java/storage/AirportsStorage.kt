@@ -1,7 +1,5 @@
 package storage
 
-import nl.joozd.joozdlogcommon.BasicAirport
-import nl.joozd.joozdlogcommon.legacy.basicairport.BasicAirport_version1
 import nl.joozd.joozdlogcommon.serializing.SIZE_WRAPPED_INT
 import nl.joozd.joozdlogcommon.serializing.unpackSerialized
 import nl.joozd.joozdlogcommon.serializing.unwrapInt
