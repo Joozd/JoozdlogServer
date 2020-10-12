@@ -17,7 +17,11 @@ import java.time.Instant
 
 
 object ServerFunctions {
+    private const val CONSENSUS_TAG = "Consensus"
+    private const val CHANGE_PASSWORD_TAG = "ChangePassword"
+
     private val log = Logger.singleton
+
     /**
      * Sends current time as to client as seconds since epoch
      * @param socket: IOWorker to take care of transmission to client
@@ -33,7 +37,7 @@ object ServerFunctions {
      */
     fun sendAircraftTypes(socket: IOWorker): Boolean {
         val acTypes: List<AircraftType> = AircraftTypesConsensus.getInstance().aircraftTypes
-        val payload = packSerialized(acTypes.map{it.serialize()})
+        val payload = packSerialized(acTypes.map { it.serialize() })
         return socket.write(payload)
     }
 
@@ -42,39 +46,43 @@ object ServerFunctions {
         val payload = wrap(version)
         return socket.write(payload)
     }
+
     fun sendForcedTypesVersion(socket: IOWorker): Boolean {
         val version: Int = AircraftTypesConsensus.getInstance().forcedTypesVersion
         val payload = wrap(version)
         return socket.write(payload)
     }
+
     fun sendForcedTypes(socket: IOWorker): Boolean {
         val payload = AircraftTypesConsensus.getInstance().serializedForcedTypes
         return socket.write(payload)
     }
 
 
-
     /**
      * Add or remove consensus data to or from a registration
      */
-    fun addCToConsensus(socket: IOWorker, extraData: ByteArray){
-        with (AircraftTypesConsensus.getInstance()) {
-            unpackSerialized(extraData).map { ConsensusData.deserialize(it) }.forEach {
-                if (it.subtract)
-                    removeCounter(it.registration, it.aircraftType)
-                else
-                    addCounter(it.registration, it.aircraftType)
-                writeConsensusMapToFile()
-            }
+    fun addCToConsensus(socket: IOWorker, extraData: ByteArray) {
+        with(AircraftTypesConsensus.getInstance()) {
+            unpackSerialized(extraData).map { ConsensusData.deserialize(it) }
+                .also {
+                    log.v("Received ${it.size} Consensus instructions", CONSENSUS_TAG)
+                }
+                .forEach {
+                    if (it.subtract)
+                        removeCounter(it.registration, it.aircraftType)
+                    else
+                        addCounter(it.registration, it.aircraftType)
+                    writeConsensusMapToFile()
+                }
         }
         socket.write(JoozdlogCommsKeywords.OK)
     }
 
     fun getAircraftConsensus(socket: IOWorker): Boolean =
-         socket.write(AircraftTypesConsensus.getInstance().toByteArray())
-
-
-
+        socket.write(AircraftTypesConsensus.getInstance().also {
+            log.v("Sending ${it.consensus.size} Consensus records", CONSENSUS_TAG)
+        }.toByteArray())
 
 
     /**
@@ -100,18 +108,21 @@ object ServerFunctions {
             socket.write(wrap(-1)) // -1 means SERVER_ERROR in this case
 
     fun changePassword(socket: IOWorker, flightsStorage: FlightsStorage?, newKey: ByteArray): FlightsStorage? {
-        if (flightsStorage?.correctKey == false) return socket.write(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS).run{null}
-        if (flightsStorage == null) return socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN).run{null}
+        if (flightsStorage?.correctKey == false) return socket.write(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS)
+            .run { null }
+        if (flightsStorage == null) return socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN).run { null }
         return try {
-            UserAdministration.updatePassword(flightsStorage, newKey)?.also{
-                socket.write(JoozdlogCommsKeywords.OK).also{
-                    log.n("Password changed for ${flightsStorage.loginData.userName}", "changePassword")
+            UserAdministration.updatePassword(flightsStorage, newKey)?.also {
+                socket.write(JoozdlogCommsKeywords.OK).also {
+                    log.n("Password changed for ${flightsStorage.loginData.userName}", CHANGE_PASSWORD_TAG)
                 }
             }
-        } catch (e: IOException){
-            log.e("changePassword failed: ${e.message}", "changePassword")
+        } catch (e: IOException) {
+            log.e("changePassword failed: ${e.message}", CHANGE_PASSWORD_TAG)
             null
         }
     }
-
 }
+
+
+

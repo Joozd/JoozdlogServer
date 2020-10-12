@@ -181,5 +181,8 @@ class AircraftTypesConsensus(private val aircraftFile: File, private val consens
         }
     }
 
+    /**
+     * @see [serializedConsensus]
+     */
     fun toByteArray() = serializedConsensus
 }

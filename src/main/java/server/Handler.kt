@@ -23,6 +23,8 @@ class Handler(private val socket: IOWorker): Closeable {
         get() = this::class.simpleName
 
 
+
+
     fun handleAll(){
         var keepGoing = true
         var flightsStorage: FlightsStorage? = null
@@ -53,8 +55,8 @@ class Handler(private val socket: IOWorker): Closeable {
                     JoozdlogCommsKeywords.LOGIN -> {
                         val loginData = LoginData.deserialize(extraData)
                         flightsStorage = FlightsStorage(loginData)
-                        log.n("login attempt for ${loginData.userName} from ${socket.clientAddress}", TAG)
-                        log.n(if (flightsStorage.correctKey) "success" else "failed", TAG)
+                        log.n("login attempt for ${loginData.userName} from ${socket.clientAddress}", LOGIN_TAG)
+                        log.n(if (flightsStorage.correctKey) "success" else "failed", LOGIN_TAG)
                         /*
                         - Server checks if file [username] exists, if so, it loads flights/aircraft from files
                         - server responds "OK" or "UNKNOWN_USER"<make registration for users?> or "WRONG_PASSWORD"
@@ -77,7 +79,9 @@ class Handler(private val socket: IOWorker): Closeable {
                         if (flightsStorage == null)
                             socket.write(JoozdlogCommsKeywords.USER_ALREADY_EXISTS)
                         else
-                            socket.write(JoozdlogCommsKeywords.OK)
+                            socket.write(JoozdlogCommsKeywords.OK).also{
+                                log.n("Created new user: ${loginData.userName}", NEW_USER_TAG)
+                            }
                     }
 
                     /**
@@ -108,13 +112,13 @@ class Handler(private val socket: IOWorker): Closeable {
                         flightsStorage?.let{storage ->
                             storage.addFlights(extraData)?.let {
                                 socket.write(JoozdlogCommsKeywords.OK)
-                                log.n("received $it flights from client", TAG)
+                                log.v("received $it flights from client", FLIGHTS_FILE_TAG)
                             } ?: run {
-                                log.e("error while adding flights from client ${socket.clientAddress}", TAG)
+                                log.e("error while adding flights from client ${socket.clientAddress}", FLIGHTS_FILE_TAG)
                                 socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
                             }
                         } ?: socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN).also{
-                            log.w("user at ${socket.clientAddress} wanted to send flights while not logged in", TAG)
+                            log.w("user at ${socket.clientAddress} wanted to send flights while not logged in", FLIGHTS_FILE_TAG)
                         }
                     }
 
@@ -127,7 +131,7 @@ class Handler(private val socket: IOWorker): Closeable {
                             socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN)
                         flightsStorage?.flightsFile?.let{ff ->
                             val timeStamp = unwrapLong(extraData)
-                            log.n("sending ${ff.flights.filter { it.timeStamp > timeStamp }.size} flights to client", TAG)
+                            log.v("sending ${ff.flights.filter { it.timeStamp > timeStamp }.size} flights to client", TAG)
                             socket.write(flightsStorage?.filteredFlightsAsBytes { it.timeStamp > timeStamp } ?: JoozdlogCommsKeywords.NOT_LOGGED_IN.toByteArray(Charsets.UTF_8))
                         } ?: socket.write(JoozdlogCommsKeywords.SERVER_ERROR).also{
                             log.e("server error while sending flights to ${socket.clientAddress}")
@@ -169,7 +173,7 @@ class Handler(private val socket: IOWorker): Closeable {
                         }
                         else {
                             socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
-                            log.e("error: Timestamp doesn't match.\nflightsStorage: $flightsStorage\ntimestamp: ${flightsStorage?.flightsFile?.timestamp}", TAG)
+                            log.e("error: Timestamp doesn't match.\nflightsStorage: $flightsStorage\ntimestamp: ${flightsStorage?.flightsFile?.timestamp}", FLIGHTS_FILE_TAG)
                         }
                     }
 
@@ -182,9 +186,9 @@ class Handler(private val socket: IOWorker): Closeable {
                         flightsStorage?.let { storage ->
                             if (storage.writeFlightsToDisk()) {
                                 socket.write(JoozdlogCommsKeywords.OK)
-                                log.n("Successfully saved all ${storage.flightsFile?.flights?.size} flights to disk for user ${storage.loginData.userName}", TAG)
+                                log.v("Successfully saved all ${storage.flightsFile?.flights?.size} flights to disk for user ${storage.loginData.userName}", FLIGHTS_FILE_TAG)
                             } else {
-                                log.e("Write problem while wroting flights to disk for ${socket.clientAddress}")
+                                log.e("Write problem while writing flights to disk for ${socket.clientAddress}")
                                 socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
                             }
                         }
@@ -212,4 +216,11 @@ class Handler(private val socket: IOWorker): Closeable {
     }
 
     override fun close() = socket.close()
+
+    companion object{
+        private const val LOGIN_TAG =     "Login"
+        private const val NEW_USER_TAG =  "New User"
+        private const val FLIGHTS_FILE_TAG = "FlightsFile"
+
+    }
 }
