@@ -149,7 +149,7 @@ class Logger(
         tagLock.withLock {
             val nonDuplicateTag: String? = when {
                 tag == null -> null
-                force || (tag != mostRecentTag && (LocalDateTime.now(ZoneOffset.UTC).minus(mostRecentTimeStamp!!) > Duration.ofSeconds(10))) -> {
+                force || tag != mostRecentTag || LocalDateTime.now(ZoneOffset.UTC).minus(mostRecentTimeStamp!!) > Duration.ofSeconds(10) -> {
                     mostRecentTag = tag
                     mostRecentTimeStamp = LocalDateTime.now(ZoneOffset.UTC)
                     tag
