@@ -5,6 +5,7 @@ import crypto.SHACrypto
 import extensions.readNBytes
 import nl.joozd.joozdlogcommon.BasicFlight
 import nl.joozd.joozdlogcommon.LoginData
+import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import nl.joozd.joozdlogcommon.legacy.basicflight.BasicFlightVersionFunctions
 import nl.joozd.joozdlogcommon.serializing.intFromBytes
 import nl.joozd.joozdlogcommon.serializing.longFromBytes
@@ -25,6 +26,14 @@ import java.time.Instant
  * - 8 bytes making a timestamp of when the file was last saved
  */
 class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: FlightsFile? = null) {
+    constructor (loginDataWithEmail: LoginDataWithEmail, forcedFlightsFile: FlightsFile? = null):
+            this(LoginData(
+                userName = loginDataWithEmail.userName,
+                password = loginDataWithEmail.password,
+                basicFlightVersion = loginDataWithEmail.basicFlightVersion
+            ), forcedFlightsFile)
+
+
     private val userFilesDirectory
         get() = Settings["userDir"]
     private val log = Logger.singleton

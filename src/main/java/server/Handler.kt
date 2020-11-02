@@ -122,6 +122,14 @@ class Handler(private val socket: IOWorker): Closeable {
 
 
                     /**
+                     * Send a backup mail to user
+                     * [extraData] is [LoginDataWithEmail]
+                     * flightsStorage can be null, in that case login from loginData will be used.
+                     */
+                    JoozdlogCommsKeywords.REQUEST_BACKUP_MAIL -> ServerFunctions.sendBackupMail(socket, flightsStorage, extraData)
+
+
+                    /**
                      * expecting a bunch of packed serialized BasicFlights
                      * Will only work after logging in as otherwise no storage loaded
                      * [extraData] should be formatted as packSerialized(basicFlightsList.map{it.serialize()})
@@ -174,6 +182,7 @@ class Handler(private val socket: IOWorker): Closeable {
                     JoozdlogCommsKeywords.REQUEST_FORCED_TYPES_VERSION -> ServerFunctions.sendForcedTypesVersion(socket)
 
                     JoozdlogCommsKeywords.REQUEST_FORCED_TYPES -> ServerFunctions.sendForcedTypes(socket)
+
 
 
 
