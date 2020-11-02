@@ -17,7 +17,6 @@ import settings.Settings
 import storage.AirportsStorage
 import storage.FlightsStorage
 import storage.UserAdministration
-import sun.reflect.annotation.ExceptionProxy
 import utils.CsvExporter
 import utils.Logger
 import java.io.IOException
