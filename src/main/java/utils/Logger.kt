@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import settings.Settings
 import java.io.File
 import java.time.Duration
 import java.time.LocalDateTime
@@ -170,7 +171,7 @@ class Logger(
         const val DEBUG = 3
 
         //singleton implementation
-        val singleton: Logger = Logger(File("joozdlogserver_verbose.log"), File("joozdlogserver.log"))
+        val singleton: Logger = Logger(verboseLogFile = File(Settings["verboseLogFile"] ?: "verbose_fallback.log"),logFile =  File(Settings["logFile"] ?: "logfile_fallback.log"))
 
     }
 

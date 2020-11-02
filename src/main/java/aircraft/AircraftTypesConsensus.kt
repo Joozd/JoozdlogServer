@@ -4,6 +4,7 @@ import nl.joozd.joozdlogcommon.AircraftType
 import nl.joozd.joozdlogcommon.serializing.listFromBytes
 import nl.joozd.joozdlogcommon.serializing.mapFromBytes
 import nl.joozd.joozdlogcommon.serializing.toByteArray
+import settings.Settings
 import java.io.File
 
 /**
@@ -24,10 +25,12 @@ import java.io.File
 
 class AircraftTypesConsensus(private val aircraftFile: File, private val consensusFile: File, private val forcedTypesfile: File) {
     companion object{
-        private const val CONSENSUS_LIMIT = 0.74 // 3/4 is good enough
-        private const val AIRCRAFTFILE  = "types/aircrafttypes"
-        private const val CONSENSUSFILE = "types/consensus"
-        private const val FORCEDFILE    = "types/forcedtypes"
+        private const val AIRCRAFTFILE  = "aircrafttypes"
+        private const val CONSENSUSFILE = "consensus"
+        private const val FORCEDFILE    = "forcedtypes"
+        private val aircraftDirectory = Settings["typesDir"]
+        private val consensusLimit: Double = Settings.minimumConsensus
+
         /*
         fun createFiles(consensusFile: File, forcedTypesFile: File) {
             val consensusMap: Map<String, List<TypeCounter>> = emptyMap()
@@ -46,9 +49,9 @@ class AircraftTypesConsensus(private val aircraftFile: File, private val consens
         {
             INSTANCE ?: run {
                 INSTANCE = AircraftTypesConsensus(
-                    File(AIRCRAFTFILE),
-                    File(CONSENSUSFILE),
-                    File(FORCEDFILE)
+                    File(aircraftDirectory+AIRCRAFTFILE),
+                    File(aircraftDirectory+CONSENSUSFILE),
+                    File(aircraftDirectory+FORCEDFILE)
                 )
                 INSTANCE!!
             }
@@ -177,7 +180,7 @@ class AircraftTypesConsensus(private val aircraftFile: File, private val consens
         if (tcList.isEmpty()) return null
         val totalCount = tcList.map{it.count}.sum()
         return tcList.maxBy { it.count }?.let {candidate ->
-            if (candidate.count / totalCount.toDouble() > CONSENSUS_LIMIT) candidate.type else null
+            if (candidate.count / totalCount.toDouble() > consensusLimit) candidate.type else null
         }
     }
 

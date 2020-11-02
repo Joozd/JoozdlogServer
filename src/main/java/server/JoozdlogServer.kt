@@ -94,7 +94,7 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
             if (type == "TLS") {
                 val ssf: SSLServerSocketFactory
                 try { // set up key manager to do server authentication
-                    val passphrase = "a5yzVR0E".toCharArray()
+                    val passphrase = Settings["ssl"]!!.toCharArray() // might as well crash if not found since won't be coming online anyway
                     val ctx: SSLContext = SSLContext.getInstance("TLS")
                     val kmf: KeyManagerFactory = KeyManagerFactory.getInstance("SunX509")
                     val ks: KeyStore = KeyStore.getInstance("JKS")

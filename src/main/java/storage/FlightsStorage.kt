@@ -8,6 +8,7 @@ import nl.joozd.joozdlogcommon.LoginData
 import nl.joozd.joozdlogcommon.legacy.basicflight.BasicFlightVersionFunctions
 import nl.joozd.joozdlogcommon.serializing.intFromBytes
 import nl.joozd.joozdlogcommon.serializing.longFromBytes
+import settings.Settings
 import utils.Logger
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -24,12 +25,15 @@ import java.time.Instant
  * - 8 bytes making a timestamp of when the file was last saved
  */
 class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: FlightsFile? = null) {
+    private val userFilesDirectory
+        get() = Settings["userDir"]
     private val log = Logger.singleton
     init{
         println("Init FlightsStorage")
         println("name: ${loginData.userName}")
     }
-    private val file = File("./userfiles/${loginData.userName}")
+    private val file = File(userFilesDirectory + loginData.userName).also{
+        println(it.absolutePath)}
     private val hash = SHACrypto.hashWithSalt(loginData.userName, loginData.password)
     private val requestedVersion = loginData.basicFlightVersion
 

@@ -4,6 +4,7 @@ import crypto.SHACrypto
 import nl.joozd.joozdlogcommon.BasicFlight
 import nl.joozd.joozdlogcommon.LoginData
 import nl.joozd.joozdlogcommon.serializing.toByteArray
+import settings.Settings
 import utils.Logger
 import java.io.File
 import java.io.IOException
@@ -12,6 +13,9 @@ import java.time.Instant
 object UserAdministration {
     const val EMPTY_FLIGHT_LIST = 0
     private val log = Logger.singleton
+    private val userFilesDirectory
+        get() = Settings["userDir"]
+
     /**
      * Checks if a user already exists (if so will return null)
      * Otherwise, it will
@@ -23,23 +27,23 @@ object UserAdministration {
      *  @return null if user exists, FlightsStorage if not
      */
     fun createNewUser(loginData: LoginData): FlightsStorage? {
-        if (File("./userfiles/${loginData.userName}").exists()) return null
-        File("./userfiles/${ loginData.userName}").createNewFile()
-        println("Creating new user: ${loginData.userName}")
+        if (File(userFilesDirectory + loginData.userName).exists()) return null
+        File(userFilesDirectory + loginData.userName).createNewFile()
+        println(userFilesDirectory + loginData.userName)
         return makeNewFile(loginData)
     }
 
 
     private fun makeNewFile(loginData: LoginData, flights: List<BasicFlight>? = null): FlightsStorage? {
-        if (!File("./userfiles/${loginData.userName}").exists()) return null
+        if (!File(userFilesDirectory + loginData.userName).exists()) return null
         val hash = SHACrypto.hashWithSalt(loginData.userName, loginData.password)
         val version = EMPTY_FLIGHT_LIST.toByteArray()
         val timestamp = Instant.now().epochSecond
         val timestampBytes = timestamp.toByteArray()
-        File("./userfiles/${loginData.userName}").writeBytes(hash + version + timestampBytes)
+        File(userFilesDirectory + loginData.userName).writeBytes(hash + version + timestampBytes)
 
 
-        return if (File("./userfiles/${loginData.userName}").inputStream().use{it.readNBytes(32)}?.contentEquals(SHACrypto.hashWithSalt(loginData.userName, loginData.password)) == true) {
+        return if (File(userFilesDirectory + loginData.userName).inputStream().use{it.readNBytes(32)}?.contentEquals(SHACrypto.hashWithSalt(loginData.userName, loginData.password)) == true) {
             println("password set for user ${loginData.userName}")
             FlightsStorage(loginData, FlightsFile(timestamp, flights?: emptyList()))
         }

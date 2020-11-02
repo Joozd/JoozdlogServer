@@ -1,12 +1,12 @@
 package storage
 
 import nl.joozd.joozdlogcommon.serializing.SIZE_WRAPPED_INT
-import nl.joozd.joozdlogcommon.serializing.unpackSerialized
 import nl.joozd.joozdlogcommon.serializing.unwrapInt
+import settings.Settings
 import java.io.File
 
 object AirportsStorage {
-    private val file = File("./airports")
+    private val file = File(Settings["airportsFile"]!!)
     // file = wrap<Int>(version) + packSerialized(List<Basicairport>.map {it.serialize()}
 
     val fileExists: Boolean

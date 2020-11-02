@@ -1,9 +1,9 @@
 package server
 
 import data.Identifiers
-import data.Settings
 import nl.joozd.joozdlogcommon.comms.Packet
 import nl.joozd.joozdlogcommon.serializing.intFromBytes
+import settings.Settings
 
 import java.io.BufferedInputStream
 import java.io.Closeable
@@ -67,7 +67,7 @@ class IOWorker(private val socket: Socket): Closeable {
             header[it] = r.toByte()
         }
         val expectedSize = intFromBytes(header.takeLast(4))
-        if (expectedSize > Settings.MAX_MESSAGE_SIZE) throw IOException("size bigger than ${Settings.MAX_MESSAGE_SIZE}")
+        if (expectedSize > Settings.maxMessageSize) throw IOException("size bigger than ${Settings.maxMessageSize}")
         val message = mutableListOf<Byte>()
 
         //read buffers until correct amount of bytes reached or fail trying

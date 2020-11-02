@@ -1,6 +1,7 @@
 package server
 
 import nl.joozd.joozdlogcommon.LoginData
+import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import nl.joozd.joozdlogcommon.comms.JoozdlogCommsKeywords
 import nl.joozd.joozdlogcommon.serializing.*
 import storage.FlightsStorage
@@ -44,7 +45,7 @@ class Handler(private val socket: IOWorker): Closeable {
                         protocolVersion = intFromBytes(extraData)
                     } // not used at the moment, but useful when updating protocol
 
-                    JoozdlogCommsKeywords.NEXT_IS_COMPRESSED -> TODO("not implemented")
+                    // JoozdlogCommsKeywords.NEXT_IS_COMPRESSED -> TODO("not implemented")
 
                     JoozdlogCommsKeywords.REQUEST_TIMESTAMP -> ServerFunctions.sendTimestamp(socket)
 
@@ -69,9 +70,10 @@ class Handler(private val socket: IOWorker): Closeable {
                         }
                     }
 
+
                     /**
                      * Creates a new user directory with password
-                     * extraData should be<WString>USERNAME</><ByteArray>ENCRYPTION_KEY</bytearray>
+                     * extraData should be <LoginData>(serialized)
                      */
                     JoozdlogCommsKeywords.NEW_ACCOUNT -> {
                         val loginData = LoginData.deserialize(extraData)
@@ -85,6 +87,24 @@ class Handler(private val socket: IOWorker): Closeable {
                     }
 
                     /**
+                     * Creates a new user directory with password
+                     * extraData should be <LogindataWithEmail>(serialized)
+                     */
+                    JoozdlogCommsKeywords.NEW_ACCOUNT_EMAIL -> {
+                        LoginDataWithEmail.deserialize(extraData).let {ld ->
+                            flightsStorage = UserAdministration.createNewUser(LoginData(ld.userName, ld.password, ld.basicFlightVersion))
+                            if (flightsStorage == null)
+                                socket.write(JoozdlogCommsKeywords.USER_ALREADY_EXISTS)
+                            else
+                                socket.write(JoozdlogCommsKeywords.OK).also {
+                                    log.n("Created new user: ${ld.userName}", NEW_USER_TAG)
+                                    if (ServerFunctions.sendLoginLinkEmail(ld))
+                                        log.v("Sent login link to ${ld.email}", NEW_USER_TAG)
+                                }
+                        }
+                    }
+
+                    /**
                      * Changes a users password and deletes saved data
                      */
                     JoozdlogCommsKeywords.CHANGE_PASSWORD -> TODO("not implemented")
@@ -92,7 +112,7 @@ class Handler(private val socket: IOWorker): Closeable {
                     /**
                      * Decrypts users flights, changes its password, and encrypts data with new pass
                      * On success updates [flightsStorage]
-                     * Expects a bytearray as key as [extraData]
+                     * Expects a [LoginDataWithEmail] with key and possible email as [extraData]
                      */
                     JoozdlogCommsKeywords.UPDATE_PASSWORD -> {
                         ServerFunctions.changePassword(socket, flightsStorage, extraData)?.let{
