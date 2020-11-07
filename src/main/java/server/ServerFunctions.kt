@@ -155,6 +155,7 @@ object ServerFunctions {
         val fs = flightsStorage ?: FlightsStorage(loginData)
         if (!fs.correctKey)  {
             socket.sendError(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS)
+            log.e("Bad login data", "backup")
             return
         }
 
@@ -169,7 +170,9 @@ object ServerFunctions {
                 attachment = CsvExporter(it).toByteArray(),
                 attachmentName = "JoozdlogBackup - $date.csv",
                 attachmentType = "text/csv"
-            )) socket.write(JoozdlogCommsKeywords.OK)
+            )) socket.write(JoozdlogCommsKeywords.OK).also{
+                log.n("Backup mail sent for user ${flightsStorage?.loginData?.userName}", "backup")
+            }
             else socket.sendError(JoozdlogCommsKeywords.NOT_A_VALID_EMAIL_ADDRESS)
         } ?: socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
     }
