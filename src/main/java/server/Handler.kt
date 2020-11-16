@@ -223,6 +223,10 @@ class Handler(private val socket: IOWorker): Closeable {
                         }
                     }
 
+                    JoozdlogCommsKeywords.DEBUG_SEND_TEST_MAIL -> {
+                        ServerFunctions.sendTestEmail(socket)
+                    }
+
                     JoozdlogCommsKeywords.END_OF_SESSION -> {
                         keepGoing = false
                         log.d("Closing connection.\n")

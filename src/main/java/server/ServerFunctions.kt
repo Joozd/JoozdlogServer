@@ -146,6 +146,7 @@ object ServerFunctions {
      * flightsStorage can be null, in that case login from loginData will be used.
      */
     fun sendBackupMail(socket: IOWorker, flightsStorage: FlightsStorage?, rawLoginData: ByteArray){
+        log.d("SendBackupMail started!")
         val loginData = try{
             LoginDataWithEmail.deserialize(rawLoginData)
         } catch(e: Exception){
@@ -163,7 +164,7 @@ object ServerFunctions {
         fs.flightsFile?.flights?.let {
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmm")
             val date = LocalDateTime.now().format(formatter)
-            if (sendMailWithAttachment(
+            if (sendMail(
                 content = "Hallon dit moet nog beter worden. Met HTML enzo. Maar voor nu: je backup csv dinges.\n\nVeel plezier!\nXOXO Joozd!",
                 subject = "Joozdlog Backup CSV",
                 to = loginData.email,
@@ -175,6 +176,12 @@ object ServerFunctions {
             }
             else socket.sendError(JoozdlogCommsKeywords.NOT_A_VALID_EMAIL_ADDRESS)
         } ?: socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
+    }
+
+    fun sendTestEmail(socket: IOWorker){
+        log.n("Sending test email!")
+        sendMail("HALLON TEST AMIL AUB GRGR", "Joozdlog Test email", "joozd@joozd.nl")
+        socket.write(JoozdlogCommsKeywords.OK)
     }
 
     /**
@@ -204,7 +211,7 @@ object ServerFunctions {
         }
     }
 
-    fun sendMailWithAttachment(content: String, subject: String, to: String, attachment: ByteArray, attachmentName: String, attachmentType: String, fromName: String = "JoozdLog Airline Pilots\' Logbook"): Boolean{
+    private fun sendMail(content: String, subject: String, to: String, attachment: ByteArray, attachmentName: String, attachmentType: String, fromName: String = "JoozdLog Airline Pilots\' Logbook"): Boolean{
         if (!seemsToBeAnEmail(to)) return false
 
         val email = EmailBuilder.startingBlank()
@@ -223,6 +230,26 @@ object ServerFunctions {
             .sendMail(email)
         return true
     }
+
+    private fun sendMail(content: String, subject: String, to: String, fromName: String = "JoozdLog Airline Pilots\' Logbook"): Boolean{
+        if (!seemsToBeAnEmail(to)) return false
+
+        val email = EmailBuilder.startingBlank()
+            .from(fromName, Settings["emailFrom"]!!)
+            .to(to)
+            .withSubject(subject)
+            .withPlainText(content)
+            .buildEmail()
+
+        log.d("email built: $email, ${email.plainText}")
+        MailerBuilder
+            .withSMTPServer("smtp03.hostnet.nl", 587, Settings["emailFrom"]!!, Settings["noReply"])
+            .withTransportStrategy(TransportStrategy.SMTP_TLS)
+            .buildMailer()
+            .sendMail(email)
+        return true
+    }
+
 
     private fun seemsToBeAnEmail(text: String) = text matches (
         "[a-zA-Z0-9\\+\\.\\_\\%\\-\\+]{1,256}" +
