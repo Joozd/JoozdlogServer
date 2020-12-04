@@ -1,4 +1,4 @@
-package aircraft
+package data.aircraft
 
 import nl.joozd.joozdlogcommon.AircraftType
 import nl.joozd.joozdlogcommon.serializing.JoozdlogSerializable

@@ -1,6 +1,6 @@
 package server
 
-import aircraft.AircraftTypesConsensus
+import data.aircraft.AircraftTypesConsensus
 import extensions.sendError
 import nl.joozd.joozdlogcommon.AircraftType
 import nl.joozd.joozdlogcommon.ConsensusData

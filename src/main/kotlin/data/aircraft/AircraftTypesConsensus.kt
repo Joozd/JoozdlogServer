@@ -1,4 +1,4 @@
-package aircraft
+package data.aircraft
 
 import nl.joozd.joozdlogcommon.AircraftType
 import nl.joozd.joozdlogcommon.serializing.listFromBytes
@@ -49,9 +49,9 @@ class AircraftTypesConsensus(private val aircraftFile: File, private val consens
         {
             INSTANCE ?: run {
                 INSTANCE = AircraftTypesConsensus(
-                    File(aircraftDirectory+AIRCRAFTFILE),
-                    File(aircraftDirectory+CONSENSUSFILE),
-                    File(aircraftDirectory+FORCEDFILE)
+                    File(aircraftDirectory + AIRCRAFTFILE),
+                    File(aircraftDirectory + CONSENSUSFILE),
+                    File(aircraftDirectory + FORCEDFILE)
                 )
                 INSTANCE!!
             }
