@@ -31,6 +31,7 @@ class EmailHashFile(private val file: File) {
         } ?: false
     }
 
+
     /**
      * This will only create the data, not send the email
      * @param email: The email to hash
