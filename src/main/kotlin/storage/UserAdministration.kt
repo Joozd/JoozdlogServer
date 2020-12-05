@@ -36,14 +36,14 @@ object UserAdministration {
 
     private fun makeNewFile(loginData: LoginData, flights: List<BasicFlight>? = null): FlightsStorage? {
         if (!File(userFilesDirectory + loginData.userName).exists()) return null
-        val hash = SHACrypto.hashWithSalt(loginData.userName, loginData.password)
+        val hash = SHACrypto.hashWithExtraSalt(loginData.userName, loginData.password)
         val version = EMPTY_FLIGHT_LIST.toByteArray()
         val timestamp = Instant.now().epochSecond
         val timestampBytes = timestamp.toByteArray()
         File(userFilesDirectory + loginData.userName).writeBytes(hash + version + timestampBytes)
 
 
-        return if (File(userFilesDirectory + loginData.userName).inputStream().use{it.readNBytes(32)}?.contentEquals(SHACrypto.hashWithSalt(loginData.userName, loginData.password)) == true) {
+        return if (File(userFilesDirectory + loginData.userName).inputStream().use{it.readNBytes(32)}?.contentEquals(SHACrypto.hashWithExtraSalt(loginData.userName, loginData.password)) == true) {
             println("password set for user ${loginData.userName}")
             FlightsStorage(loginData, FlightsFile(timestamp, flights?: emptyList()))
         }

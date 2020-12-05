@@ -12,7 +12,6 @@ import nl.joozd.joozdlogcommon.serializing.longFromBytes
 import settings.Settings
 import utils.Logger
 import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
 import java.io.File
 import java.lang.Exception
 import java.time.Instant
@@ -43,7 +42,7 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
     }
     private val file = File(userFilesDirectory + loginData.userName).also{
         println(it.absolutePath)}
-    private val hash = SHACrypto.hashWithSalt(loginData.userName, loginData.password)
+    private val hash = SHACrypto.hashWithExtraSalt(loginData.userName, loginData.password)
     private val requestedVersion = loginData.basicFlightVersion
 
     private val fileExists: Boolean
