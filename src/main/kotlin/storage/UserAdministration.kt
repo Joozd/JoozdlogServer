@@ -1,8 +1,10 @@
 package storage
 
 import crypto.SHACrypto
+import extensions.readNBytes
 import nl.joozd.joozdlogcommon.BasicFlight
 import nl.joozd.joozdlogcommon.LoginData
+import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import nl.joozd.joozdlogcommon.serializing.toByteArray
 import settings.Settings
 import utils.Logger
@@ -67,5 +69,13 @@ object UserAdministration {
         throw (IOException("corrupt file or read error"))
     }
 
+    fun checkLoginValid(loginData: LoginData): Boolean{
+        if (!File(userFilesDirectory + loginData.userName).exists()) return false
+        val hash = SHACrypto.hashWithExtraSalt(loginData.userName, loginData.password)
+
+        return File(Settings["userDir"] + loginData.userName).readNBytes(32).contentEquals(hash)
+    }
+
+    fun checkLoginValid(loginData: LoginDataWithEmail) = with (loginData) { checkLoginValid(LoginData(userName, password, basicFlightVersion)) }
 
 }

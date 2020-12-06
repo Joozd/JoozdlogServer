@@ -40,8 +40,7 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
         println("Init FlightsStorage")
         println("name: ${loginData.userName}")
     }
-    private val file = File(userFilesDirectory + loginData.userName).also{
-        println(it.absolutePath)}
+    private val file = File(userFilesDirectory + loginData.userName)
     private val hash = SHACrypto.hashWithExtraSalt(loginData.userName, loginData.password)
     private val requestedVersion = loginData.basicFlightVersion
 

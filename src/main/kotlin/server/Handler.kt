@@ -4,6 +4,8 @@ import nl.joozd.joozdlogcommon.LoginData
 import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import nl.joozd.joozdlogcommon.comms.JoozdlogCommsKeywords
 import nl.joozd.joozdlogcommon.serializing.*
+import server.serverFunctions.FunctionResult
+import server.serverFunctions.ServerFunctions
 import storage.FlightsStorage
 import storage.UserAdministration
 import utils.Logger
@@ -89,6 +91,7 @@ class Handler(private val socket: IOWorker): Closeable {
                     /**
                      * Creates a new user directory with password
                      * extraData should be <LogindataWithEmail>(serialized)
+                     * //TODO move this whole thing to [ServerFunctions]
                      */
                     JoozdlogCommsKeywords.NEW_ACCOUNT_EMAIL -> {
                         LoginDataWithEmail.deserialize(extraData).let {ld ->
@@ -98,8 +101,7 @@ class Handler(private val socket: IOWorker): Closeable {
                             else
                                 socket.write(JoozdlogCommsKeywords.OK).also {
                                     log.n("Created new user: ${ld.userName}", NEW_USER_TAG)
-                                    if (ServerFunctions.sendLoginLinkEmail(ld))
-                                        log.v("Sent login link to ${ld.email}", NEW_USER_TAG)
+                                    ServerFunctions.setEmailForUser(socket, extraData)
                                 }
                         }
                     }
@@ -108,6 +110,14 @@ class Handler(private val socket: IOWorker): Closeable {
                      * Changes a users password and deletes saved data
                      */
                     JoozdlogCommsKeywords.CHANGE_PASSWORD -> TODO("not implemented")
+
+                    /**
+                     * Sets email hash for user if logged in
+                     * Extradata is expected to be [LoginDataWithEmail]
+                     */
+                    JoozdlogCommsKeywords.SET_EMAIL -> {
+                        ServerFunctions.setEmailForUser(socket, extraData)
+                    }
 
                     /**
                      * Decrypts users flights, changes its password, and encrypts data with new pass

@@ -1,5 +1,8 @@
 package storage
 
+import data.email.EmailHashData
+import data.email.EmailHashFile
+import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import settings.Settings
 
 /**
@@ -9,4 +12,11 @@ import settings.Settings
 object EmailData {
     private val userFilesDirectory
         get() = Settings["emailDir"]
+
+    fun createEmailDataForUser(username: String, email: String): EmailHashData =
+        EmailHashFile(userFilesDirectory + username).create(email)
+
+    fun checkIfEmailConfirmed(username: String, email: String): Boolean = EmailHashFile(userFilesDirectory + username).verifyEmail(email)
+
+    fun checkIfEmailConfirmed(loginDataWithEmail: LoginDataWithEmail) = checkIfEmailConfirmed(loginDataWithEmail.userName, loginDataWithEmail.email)
 }

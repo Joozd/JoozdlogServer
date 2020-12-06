@@ -1,4 +1,4 @@
-package server
+package server.serverFunctions
 
 import data.aircraft.AircraftTypesConsensus
 import extensions.sendError
@@ -10,19 +10,14 @@ import nl.joozd.joozdlogcommon.serializing.packSerialized
 import nl.joozd.joozdlogcommon.serializing.toByteArray
 import nl.joozd.joozdlogcommon.serializing.unpackSerialized
 import nl.joozd.joozdlogcommon.serializing.wrap
-import org.simplejavamail.api.mailer.config.TransportStrategy
-import org.simplejavamail.email.EmailBuilder
-import org.simplejavamail.mailer.MailerBuilder
-import settings.Settings
+import server.IOWorker
 import storage.AirportsStorage
+import storage.EmailData
 import storage.FlightsStorage
 import storage.UserAdministration
-import utils.CsvExporter
 import utils.Logger
 import java.io.IOException
 import java.time.Instant
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 
@@ -129,7 +124,7 @@ object ServerFunctions {
         return try {
             UserAdministration.updatePassword(flightsStorage, loginData.password)?.also {
                 socket.write(JoozdlogCommsKeywords.OK).also {
-                    if (loginData.email.isNotBlank()) sendLoginLinkEmail(loginData.copy(userName = flightsStorage.loginData.userName))
+                    if (loginData.email.isNotBlank()) EmailFunctions.sendLoginLinkEmail(loginData.copy(userName = flightsStorage.loginData.userName))
                     log.n("Password changed for ${flightsStorage.loginData.userName}", CHANGE_PASSWORD_TAG)
                 }
             }
@@ -138,6 +133,27 @@ object ServerFunctions {
             null
         }
     }
+
+    /**
+     * TODO Maybe make this so it cna only be tried every 10 minutes or so to prevent people flooding with emails?
+     * Sets email for user and sends a confirmation email
+     */
+    fun setEmailForUser(socket: IOWorker, rawLoginDataWithEmail: ByteArray){
+        val loginData = LoginDataWithEmail.deserialize(rawLoginDataWithEmail)
+        if (UserAdministration.checkLoginValid(loginData)){
+            val hashData = EmailData.createEmailDataForUser(loginData.userName, loginData.email)
+            when(EmailFunctions.sendEmailConfirmationMail(loginData, hashData)){
+                FunctionResult.SUCCESS ->
+                    socket.write(JoozdlogCommsKeywords.OK).also{
+                        log.n("Backup mail sent for user ${loginData.userName}", "backup")
+                    }
+                FunctionResult.BAD_EMAIL_ADDRESS -> socket.sendError(JoozdlogCommsKeywords.NOT_A_VALID_EMAIL_ADDRESS)
+                else -> socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
+            }
+        } else socket.sendError(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS)
+    }
+
+    fun sendLoginLinkEmail(loginDataWithEmail: LoginDataWithEmail) = EmailFunctions.sendLoginLinkEmail(loginDataWithEmail)
 
 
     /**
@@ -159,106 +175,33 @@ object ServerFunctions {
             log.e("Bad login data", "backup")
             return
         }
+        when (EmailFunctions.sendBackupMail(fs, loginData.email)){
+            FunctionResult.SUCCESS ->
+                socket.write(JoozdlogCommsKeywords.OK).also{
+                    log.n("Backup mail sent for user ${flightsStorage?.loginData?.userName}", "backup")
+                }
 
-        // We now have a valid flightfile and a valid loginData. Exporting file and mailing it: (emailAddress checked in mailer)
-        fs.flightsFile?.flights?.let {
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmm")
-            val date = LocalDateTime.now().format(formatter)
-            if (sendMail(
-                content = "Hallon dit moet nog beter worden. Met HTML enzo. Maar voor nu: je backup csv dinges.\n\nVeel plezier!\nXOXO Joozd!",
-                subject = "Joozdlog Backup CSV",
-                to = loginData.email,
-                attachment = CsvExporter(it).toByteArray(),
-                attachmentName = "JoozdlogBackup - $date.csv",
-                attachmentType = "text/csv"
-            )) socket.write(JoozdlogCommsKeywords.OK).also{
-                log.n("Backup mail sent for user ${flightsStorage?.loginData?.userName}", "backup")
-            }
-            else socket.sendError(JoozdlogCommsKeywords.NOT_A_VALID_EMAIL_ADDRESS)
-        } ?: socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
-    }
+            FunctionResult.BAD_EMAIL_ADDRESS -> socket.sendError(JoozdlogCommsKeywords.NOT_A_VALID_EMAIL_ADDRESS)
 
-    fun sendTestEmail(socket: IOWorker){
-        log.n("Sending test email!")
-        sendMail("HALLON TEST AMIL AUB GRGR", "Joozdlog Test email", "joozd@joozd.nl")
-        socket.write(JoozdlogCommsKeywords.OK)
-    }
-
-    /**
-     * Send a login link email.
-     * //TODO get mail from a file (html) and own address and subject from [Settings]
-     */
-    fun sendLoginLinkEmail(loginData: LoginDataWithEmail): Boolean{
-        log.d("Sending login email...")
-        if (!seemsToBeAnEmail(loginData.email)) return false
-        else {
-            val passwordString = Base64.getEncoder().encodeToString(loginData.password)
-            val loginLink = "https://joozdlog.joozd.nl/inject-key/${loginData.userName}:$passwordString"
-            val email = EmailBuilder.startingBlank()
-                .from("Joozdlog Login Link", Settings["emailFrom"]!!)
-                .to(loginData.email)
-                .withSubject(Settings["emailSubject"])
-                .withPlainText("Hallon dit moet nog beter worden. Met HTML enzo. Maar voor nu: Je login link!\n\n$loginLink\n\nVeel plezier!\nXOXO Joozd!")
-                .buildEmail()
-
-            log.d("email built: $email, ${email.plainText}")
-            MailerBuilder
-                .withSMTPServer("smtp03.hostnet.nl", 587, Settings["emailFrom"]!!, Settings["noReply"])
-                .withTransportStrategy(TransportStrategy.SMTP_TLS)
-                .buildMailer()
-                .sendMail(email)
-            return true
+            else -> socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
         }
     }
 
-    private fun sendMail(content: String, subject: String, to: String, attachment: ByteArray, attachmentName: String, attachmentType: String, fromName: String = "JoozdLog Airline Pilots\' Logbook"): Boolean{
-        if (!seemsToBeAnEmail(to)) return false
-
-        val email = EmailBuilder.startingBlank()
-            .from(fromName, Settings["emailFrom"]!!)
-            .to(to)
-            .withSubject(subject)
-            .withPlainText(content)
-            .withAttachment(attachmentName, attachment, attachmentType)
-            .buildEmail()
-
-        log.d("email built: $email, ${email.plainText}")
-        MailerBuilder
-            .withSMTPServer("smtp03.hostnet.nl", 587, Settings["emailFrom"]!!, Settings["noReply"])
-            .withTransportStrategy(TransportStrategy.SMTP_TLS)
-            .buildMailer()
-            .sendMail(email)
-        return true
-    }
-
-    private fun sendMail(content: String, subject: String, to: String, fromName: String = "JoozdLog Airline Pilots\' Logbook"): Boolean{
-        if (!seemsToBeAnEmail(to)) return false
-
-        val email = EmailBuilder.startingBlank()
-            .from(fromName, Settings["emailFrom"]!!)
-            .to(to)
-            .withSubject(subject)
-            .withPlainText(content)
-            .buildEmail()
-
-        log.d("email built: $email, ${email.plainText}")
-        MailerBuilder
-            .withSMTPServer("smtp03.hostnet.nl", 587, Settings["emailFrom"]!!, Settings["noReply"])
-            .withTransportStrategy(TransportStrategy.SMTP_TLS)
-            .buildMailer()
-            .sendMail(email)
-        return true
+    /**
+     * Send a test email
+     */
+    fun sendTestEmail(socket: IOWorker){
+        when (EmailFunctions.sendTestEmail()){
+            FunctionResult.SUCCESS -> socket.write(JoozdlogCommsKeywords.OK)
+            else -> socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
+        }
     }
 
 
-    private fun seemsToBeAnEmail(text: String) = text matches (
-        "[a-zA-Z0-9\\+\\.\\_\\%\\-\\+]{1,256}" +
-                "\\@" +
-                "[a-zA-Z0-9][a-zA-Z0-9\\-]{0,64}" +
-                "(" +
-                "\\." +
-                "[a-zA-Z0-9][a-zA-Z0-9\\-]{0,25}" +
-                ")+").toRegex()
+
+
+
+
 
 
 }
