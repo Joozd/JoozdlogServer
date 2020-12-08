@@ -66,10 +66,10 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
                 level = Settings.logLevel
             }
             log.newLine()
-            log.n("*******************************")
-            log.n("*** Starting JoozdlogServer ***")
-            log.n("*** Logging level: ${log.level.toString().padStart(2, ' ')}       ***")
-            log.n("*******************************")
+            log.n("************************************")
+            log.n("*** Starting JoozdlogServer 0001 ***")
+            log.n("*** Logging level: ${log.level.toString().padStart(2, ' ')}            ***")
+            log.n("************************************")
             log.newLine()
 
             val port = DefaultServerPort

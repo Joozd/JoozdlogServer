@@ -51,7 +51,8 @@ object AESCrypto {
     }
 
 
-    fun decrypt(keyBytes: ByteArray, input: ByteArray): ByteArray? {
+    fun decrypt(keyBytes: ByteArray, input: ByteArray?): ByteArray? {
+        if (input == null) return null
         Security.addProvider(BouncyCastleProvider())
 
         try {

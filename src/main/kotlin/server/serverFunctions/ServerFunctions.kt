@@ -6,13 +6,10 @@ import nl.joozd.joozdlogcommon.AircraftType
 import nl.joozd.joozdlogcommon.ConsensusData
 import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import nl.joozd.joozdlogcommon.comms.JoozdlogCommsKeywords
-import nl.joozd.joozdlogcommon.serializing.packSerialized
-import nl.joozd.joozdlogcommon.serializing.toByteArray
-import nl.joozd.joozdlogcommon.serializing.unpackSerialized
-import nl.joozd.joozdlogcommon.serializing.wrap
+import nl.joozd.joozdlogcommon.serializing.*
 import server.IOWorker
 import storage.AirportsStorage
-import storage.EmailData
+import storage.EmailRepository
 import storage.FlightsStorage
 import storage.UserAdministration
 import utils.Logger
@@ -140,12 +137,13 @@ object ServerFunctions {
      */
     fun setEmailForUser(socket: IOWorker, rawLoginDataWithEmail: ByteArray){
         val loginData = LoginDataWithEmail.deserialize(rawLoginDataWithEmail)
+        log.v("Attempting to send confirmation mail for ${loginData.userName} to ${loginData.email}")
         if (UserAdministration.checkLoginValid(loginData)){
-            val hashData = EmailData.createEmailDataForUser(loginData.userName, loginData.email)
+            val hashData = EmailRepository.createEmailDataForUser(loginData.userName, loginData.email)
             when(EmailFunctions.sendEmailConfirmationMail(loginData, hashData)){
                 FunctionResult.SUCCESS ->
                     socket.write(JoozdlogCommsKeywords.OK).also{
-                        log.n("Backup mail sent for user ${loginData.userName}", "backup")
+                        log.n("Confirmation mail sent for user ${loginData.userName}", "backup")
                     }
                 FunctionResult.BAD_EMAIL_ADDRESS -> socket.sendError(JoozdlogCommsKeywords.NOT_A_VALID_EMAIL_ADDRESS)
                 else -> socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
@@ -153,7 +151,24 @@ object ServerFunctions {
         } else socket.sendError(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS)
     }
 
-    fun sendLoginLinkEmail(loginDataWithEmail: LoginDataWithEmail) = EmailFunctions.sendLoginLinkEmail(loginDataWithEmail)
+    /**
+     * attempt to set email to "confirmed" for user. Expects a wrapped string with [username:hashAsBase64]]
+     */
+    fun confirmEmail(socket: IOWorker, extraData: ByteArray){
+        try{
+            unwrapString(extraData).split(":").let{
+                when(EmailRepository.tryToConfirmEmail(it.first(), Base64.getDecoder().decode(it.last()))){
+                    true -> socket.write(JoozdlogCommsKeywords.OK)
+                    false -> socket.sendError(JoozdlogCommsKeywords.EMAIL_NOT_KNOWN_OR_VERIFIED)
+                    null -> socket.sendError(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS)
+                }
+            }
+        } catch (e: java.lang.Exception) { socket.sendError(JoozdlogCommsKeywords.BAD_DATA_RECEIVED)}
+    }
+
+
+    fun sendLoginLinkEmail(rawLoginDataWithEmail: ByteArray) = EmailFunctions.sendLoginLinkEmail(LoginDataWithEmail.deserialize(rawLoginDataWithEmail))
+
 
 
     /**

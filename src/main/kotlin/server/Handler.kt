@@ -1,5 +1,6 @@
 package server
 
+import extensions.sendError
 import nl.joozd.joozdlogcommon.LoginData
 import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import nl.joozd.joozdlogcommon.comms.JoozdlogCommsKeywords
@@ -97,12 +98,11 @@ class Handler(private val socket: IOWorker): Closeable {
                         LoginDataWithEmail.deserialize(extraData).let {ld ->
                             flightsStorage = UserAdministration.createNewUser(LoginData(ld.userName, ld.password, ld.basicFlightVersion))
                             if (flightsStorage == null)
-                                socket.write(JoozdlogCommsKeywords.USER_ALREADY_EXISTS)
-                            else
-                                socket.write(JoozdlogCommsKeywords.OK).also {
-                                    log.n("Created new user: ${ld.userName}", NEW_USER_TAG)
-                                    ServerFunctions.setEmailForUser(socket, extraData)
-                                }
+                                socket.sendError(JoozdlogCommsKeywords.USER_ALREADY_EXISTS)
+                            else {
+                                log.n("Created new user: ${ld.userName}", NEW_USER_TAG)
+                                ServerFunctions.setEmailForUser(socket, extraData)  // this will send OK or other message
+                            }
                         }
                     }
 
@@ -117,6 +117,13 @@ class Handler(private val socket: IOWorker): Closeable {
                      */
                     JoozdlogCommsKeywords.SET_EMAIL -> {
                         ServerFunctions.setEmailForUser(socket, extraData)
+                    }
+
+                    /**
+                     * Try to confirm email address for user
+                     */
+                    JoozdlogCommsKeywords.CONFIRM_EMAIL -> {
+                        ServerFunctions.confirmEmail(socket, extraData)
                     }
 
                     /**
@@ -137,6 +144,12 @@ class Handler(private val socket: IOWorker): Closeable {
                      * flightsStorage can be null, in that case login from loginData will be used.
                      */
                     JoozdlogCommsKeywords.REQUEST_BACKUP_MAIL -> ServerFunctions.sendBackupMail(socket, flightsStorage, extraData)
+
+                    /**
+                     * Send a login link mail to user
+                     * [extraData] is [LoginDataWithEmail]
+                     */
+                    JoozdlogCommsKeywords.REQUEST_LOGIN_LINK_MAIL -> ServerFunctions.sendLoginLinkEmail(extraData)
 
 
                     /**

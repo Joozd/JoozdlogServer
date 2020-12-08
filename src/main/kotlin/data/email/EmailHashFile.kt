@@ -22,6 +22,9 @@ class EmailHashFile(private val file: File) {
         file.writeBytes(it.serialize())
     }
 
+    val confirmed
+        get() = hashData?.confirmed
+
     /**
      * Verify if an email matches it's confirmed hash
      */

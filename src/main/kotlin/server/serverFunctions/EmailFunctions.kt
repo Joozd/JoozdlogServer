@@ -6,14 +6,16 @@ import org.simplejavamail.api.mailer.config.TransportStrategy
 import org.simplejavamail.email.EmailBuilder
 import org.simplejavamail.mailer.MailerBuilder
 import settings.Settings
-import storage.EmailData
+import storage.EmailRepository
 import storage.FlightsStorage
 import utils.CsvExporter
+import utils.Logger
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
 object EmailFunctions {
+    private val log = Logger.singleton
     fun sendTestEmail() =
         sendMail("HALLON TEST AMIL AUB GRGR", "Joozdlog Test email", "joozd@joozd.nl")
 
@@ -26,7 +28,7 @@ object EmailFunctions {
      * //TODO get mail from a file (html) and own address and subject from [Settings]
      */
     fun sendBackupMail(flightsStorage: FlightsStorage, email: String): FunctionResult =
-        if (!EmailData.checkIfEmailConfirmed(flightsStorage.loginData.userName, email)) FunctionResult.BAD_EMAIL_ADDRESS
+        if (!EmailRepository.checkIfEmailConfirmed(flightsStorage.loginData.userName, email)) FunctionResult.BAD_EMAIL_ADDRESS
     else
         flightsStorage.flightsFile?.flights?.let {
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmm")
@@ -46,8 +48,10 @@ object EmailFunctions {
      * //TODO get mail from a file (html) and own address and subject from [Settings]
      */
     fun sendLoginLinkEmail(loginData: LoginDataWithEmail): FunctionResult{
-        if (!EmailData.checkIfEmailConfirmed(loginData)) return FunctionResult.BAD_EMAIL_ADDRESS
-        val passwordString = Base64.getEncoder().encodeToString(loginData.password)
+        if (!EmailRepository.checkIfEmailConfirmed(loginData)) return FunctionResult.BAD_EMAIL_ADDRESS.also{
+            log.v("Bad email address: $loginData")
+        }
+        val passwordString = Base64.getEncoder().encodeToString(loginData.password).replace("/", "-") // slashes will cause problems
         val loginLink = "https://joozdlog.joozd.nl/inject-key/${loginData.userName}:$passwordString"
 
         return sendMail(
@@ -62,10 +66,11 @@ object EmailFunctions {
      */
 
     fun sendEmailConfirmationMail(loginData: LoginDataWithEmail, hashData: EmailHashData): FunctionResult{
-        if (!EmailData.checkIfEmailConfirmed(loginData)) return FunctionResult.BAD_EMAIL_ADDRESS
-        val hashedEmailBase64: String = Base64.getEncoder().encodeToString(hashData.hash)
+        log.d("sendEmailConfirmationMail: confirmation requested")
+        if (!EmailRepository.checkIfValidEmailAddress(loginData.email)) return FunctionResult.BAD_EMAIL_ADDRESS
+        val hashedEmailBase64: String = Base64.getEncoder().encodeToString(hashData.hash).replace("/", "-")
         val confirmationLink = "https://joozdlog.joozd.nl/verify-email/${loginData.userName}:$hashedEmailBase64"
-
+        log.d(confirmationLink)
         return sendMail(
             content = "Hallon dit is een email van Joozdlog\n\nVriendelijk verzoek om deze link te openen met JoozdLog, want ik ben te lui om een webserver op te zetten.\n\n" +
             "link:\n$confirmationLink\n\nVeel logplezier,\nJoozd",
@@ -80,7 +85,8 @@ object EmailFunctions {
      */
 
     private fun sendMail(content: String, subject: String, to: String, attachment: ByteArray? = null, attachmentName: String? = null, attachmentType: String? = null, fromName: String = "JoozdLog Airline Pilots\' Logbook"): FunctionResult{
-        if (!seemsToBeAnEmail(to)) return FunctionResult.BAD_EMAIL_ADDRESS
+        if (!seemsToBeAnEmail(to)) return FunctionResult.BAD_EMAIL_ADDRESS.also {log.d("Bad email address")}
+        log.d("Sending a mail with subject $subject to $to")
 
         val email = attachment?.let{
             EmailBuilder.startingBlank()

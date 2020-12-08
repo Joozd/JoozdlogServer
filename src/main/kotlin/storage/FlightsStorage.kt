@@ -70,7 +70,7 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
                     it.skip(32) // discard first 32 bytes as they are hash
                     val version = intFromBytes(it.readNBytes(4))
                     val timeStamp = longFromBytes(it.readNBytes(8))
-                    val decryptedFlights = AESCrypto.decrypt(loginData.password, it.readAllBytes())
+                    val decryptedFlights = AESCrypto.decrypt(loginData.password, it.readAllBytes().takeIf { b -> b.isNotEmpty() })
                     println("decrypted ${decryptedFlights?.size} bytes")
                     println("version is $version")
 
