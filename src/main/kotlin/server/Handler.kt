@@ -132,6 +132,7 @@ class Handler(private val socket: IOWorker): Closeable {
                      * Expects a [LoginDataWithEmail] with key and possible email as [extraData]
                      */
                     JoozdlogCommsKeywords.UPDATE_PASSWORD -> {
+                        log.n("UPDATE PASSWORD received", TAG)
                         ServerFunctions.changePassword(socket, flightsStorage, extraData)?.let{
                             flightsStorage = it
                         }
