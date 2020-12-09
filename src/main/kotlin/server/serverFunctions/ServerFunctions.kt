@@ -137,7 +137,7 @@ object ServerFunctions {
      */
     fun setEmailForUser(socket: IOWorker, rawLoginDataWithEmail: ByteArray){
         val loginData = LoginDataWithEmail.deserialize(rawLoginDataWithEmail)
-        log.v("Attempting to send confirmation mail for ${loginData.userName} to ${loginData.email}")
+        log.v("requested to set mail for ${loginData.userName} to ${loginData.email}")
         if (UserAdministration.checkLoginValid(loginData)){
             val hashData = EmailRepository.createEmailDataForUser(loginData.userName, loginData.email)
             when(EmailFunctions.sendEmailConfirmationMail(loginData, hashData)){
@@ -148,7 +148,9 @@ object ServerFunctions {
                 FunctionResult.BAD_EMAIL_ADDRESS -> socket.sendError(JoozdlogCommsKeywords.NOT_A_VALID_EMAIL_ADDRESS)
                 else -> socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
             }
-        } else socket.sendError(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS)
+        } else socket.sendError(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS).also{
+            log.n("User ${loginData.userName} tried to set email but gave invalid login info", "setEmailForUser")
+        }
     }
 
     /**
