@@ -4,6 +4,7 @@ import data.Identifiers
 import nl.joozd.joozdlogcommon.comms.Packet
 import nl.joozd.joozdlogcommon.serializing.intFromBytes
 import settings.Settings
+import utils.Logger
 
 import java.io.BufferedInputStream
 import java.io.Closeable
@@ -16,7 +17,6 @@ import java.net.Socket
  * It should be closed after usage, which will close the socket.
  * @param socket: An open socket to be used for communications
  */
-//TODO this is stopped mid-coding so needs thorough checking
 class IOWorker(private val socket: Socket): Closeable {
     private val outputStream = socket.getOutputStream()
     private val inputStream = BufferedInputStream(socket.getInputStream())
@@ -47,7 +47,7 @@ class IOWorker(private val socket: Socket): Closeable {
      * in this case it will make a packet and write that
      */
     fun write(data: ByteArray) = write(Packet(data))
-    fun write(data: String) = write(Packet(data).also{println("sending ${it.message.take(40)}")})
+    fun write(data: String) = write(Packet(data).also{Logger.singleton.d("sending ${it.message.take(40).toByteArray().toString(Charsets.UTF_8)}")}) // for debugging purposes
     fun write(data: List<Byte>) = write(Packet(data))
 
 

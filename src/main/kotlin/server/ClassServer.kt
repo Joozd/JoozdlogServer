@@ -36,9 +36,8 @@ abstract class ClassServer protected constructor(ss: ServerSocket?) : Runnable {
      */
     override fun run() {
         println("Listening...")
-        val socket: Socket
         // accept a connection
-        socket = try {
+        val socket: Socket = try {
             server!!.accept()
         } catch (e: IOException) {
             println("Class Server died: " + e.message)
@@ -50,7 +49,6 @@ abstract class ClassServer protected constructor(ss: ServerSocket?) : Runnable {
         newListener()
 
         handle(socket)
-
     }
 
     /**
@@ -58,12 +56,6 @@ abstract class ClassServer protected constructor(ss: ServerSocket?) : Runnable {
      */
     private fun newListener() {
         Thread(this).start()
-    }
-
-    companion object {
-        /**
-         * @return input from socket         *
-         */
     }
 
     /**

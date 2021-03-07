@@ -20,6 +20,7 @@ import java.time.format.DateTimeFormatter
  * Takes two logfiles i it's constructor, logs to them. Also logs to console if that is set.
  * if [verboseLogFile] is provided, this will always log verbose logs, even when level set to normal
  */
+@Suppress("unused")
 class Logger(
     var verboseLogFile: File? = null,
     var logFile: File? = null,
@@ -35,8 +36,11 @@ class Logger(
     private val timeStamp: String
         get() = if (addTimestamp) "${LocalDateTime.now(ZoneOffset.UTC).format(timestampFormat)} - " else ""
 
-    private var mostRecentTag: String? = null
-    private var mostRecentTimeStamp: LocalDateTime? = LocalDateTime.of(2000, 1, 1, 0, 0) // any date in the past will do as it is only here to check if a few seconds have passed before repeating tag
+    private var mostRecentTagVerbose: String? = null
+    private var mostRecentTimeStampVerbose: LocalDateTime? = LocalDateTime.of(2000, 1, 1, 0, 0) // any date in the past will do as it is only here to check if a few seconds have passed before repeating tag
+    private var mostRecentTagNormal: String? = null
+    private var mostRecentTimeStampNormal: LocalDateTime? = LocalDateTime.of(2000, 1, 1, 0, 0) // any date in the past will do as it is only here to check if a few seconds have passed before repeating tag
+
 
     private val tagLock = Mutex()
     private val lineLock = Mutex()
@@ -58,11 +62,11 @@ class Logger(
     fun n(message: String, tag: String? = null) {
         launch {
             lineLock.withLock {
-                if (level >= NORMAL)
+                if (level >= NORMAL) {
                     verboseLogFile?.appendText("N/$timeStamp${message.addTag(tag)}\n")
-                if (level == NORMAL)
                     logFile?.appendText("N/$timeStamp${message.addTag(tag)}\n")
                         ?: cOut("N/$timeStamp${message.addTag(tag)}\n")
+                }
             }
         }
     }
@@ -144,15 +148,24 @@ class Logger(
 
     /**
      * Adds a tag to a string if [tag] is not null
-     * If [tag] is the same as [mostRecentTag] it is replaced by spaces for easier readabiliy
+     * If [tag] is the same as [mostRecentTagVerbose] it is replaced by spaces for easier readabiliy
      */
-    private suspend fun String.addTag(tag: String?, force: Boolean = false): String {
+    private suspend fun String.addTag(tag: String?, force: Boolean = false, type: Int = VERBOSE): String {
         tagLock.withLock {
+            val mrt = when (type){
+                NORMAL -> mostRecentTagNormal
+                else -> mostRecentTagVerbose
+            }
+            val mrtTime = when (type){
+                NORMAL -> mostRecentTimeStampNormal
+                else -> mostRecentTimeStampVerbose
+            }
             val nonDuplicateTag: String? = when {
                 tag == null -> null
-                force || tag != mostRecentTag || LocalDateTime.now(ZoneOffset.UTC) - mostRecentTimeStamp!! > Duration.ofSeconds(10) -> {
-                    mostRecentTag = tag
-                    mostRecentTimeStamp = LocalDateTime.now(ZoneOffset.UTC)
+
+                force || tag != mrt || LocalDateTime.now(ZoneOffset.UTC) - mrtTime!! > Duration.ofSeconds(10) -> {
+                    if (type == NORMAL) mostRecentTagNormal = tag else mostRecentTagVerbose = tag
+                    if (type == NORMAL) mostRecentTimeStampNormal = LocalDateTime.now(ZoneOffset.UTC) else mostRecentTimeStampVerbose = LocalDateTime.now(ZoneOffset.UTC)
                     tag
                 }
                 else -> " ".repeat(tag.length)
@@ -176,8 +189,4 @@ class Logger(
 
 
 
-}
-
-private fun LocalDateTime.minus(mostRecentTimeStamp: LocalDateTime): Int {
-    return 3
 }

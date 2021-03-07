@@ -8,51 +8,53 @@
         </element>
         <element id="module-output" name="JoozdlogServer.main" />
       </element>
-      <element id="library" level="project" name="Gradle: com.sun.activation:jakarta.activation:1.2.1" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-scripting-jvm:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-gradle-plugin-model:1.3.71" />
-      <element id="library" level="project" name="Gradle: de.undercouch:gradle-download-task:4.0.2" />
-      <element id="library" level="project" name="Gradle: com.sun.mail:jakarta.mail:1.6.5" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.4.0" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-compiler-embeddable:1.3.71" />
-      <element id="library" level="project" name="Gradle: com.github.bbottema:emailaddress-rfc2822:2.2.0" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-annotation-processing-gradle:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.slf4j:slf4j-api:1.7.25" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-daemon-client:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.61" />
-      <element id="library" level="project" name="Gradle: jakarta.annotation:jakarta.annotation-api:1.3.5" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-scripting-common:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-gradle-plugin-api:1.3.71" />
-      <element id="library" level="project" name="Gradle: com.google.code.gson:gson:2.8.5" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-native-utils:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-scripting-compiler-impl-embeddable:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.intellij.deps:trove4j:1.0.20181211" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-compiler-runner:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-script-runtime:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.simplejavamail:simple-java-mail:6.4.4" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-daemon-embeddable:1.3.71" />
       <element id="file-copy" path="$USER_HOME$/AndroidStudioProjects/LogbookApp/joozdlogCommon/build/libs/joozdlogCommon.jar" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-util-io:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.3.71" />
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="library" level="project" name="Gradle: com.github.bbottema:emailaddress-rfc2822:2.2.0" />
       <element id="library" level="project" name="Gradle: com.github.bbottema:jetbrains-runtime-annotations:1.0.0" />
-      <element id="library" level="project" name="Gradle: org.jetbrains:annotations:13.0" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.4.0" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-reflect:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-build-common:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-android-extensions:1.3.71" />
-      <element id="library" level="project" name="Gradle: org.simplejavamail:core-module:6.4.4" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-util-klib:1.3.71" />
+      <element id="library" level="project" name="Gradle: com.github.gundy:semver4j:0.16.4" />
+      <element id="library" level="project" name="Gradle: com.google.code.gson:gson:2.8.6" />
+      <element id="library" level="project" name="Gradle: com.sun.activation:jakarta.activation:1.2.1" />
+      <element id="library" level="project" name="Gradle: com.sun.mail:jakarta.mail:1.6.5" />
+      <element id="library" level="project" name="Gradle: de.undercouch:gradle-download-task:4.0.2" />
+      <element id="library" level="project" name="Gradle: jakarta.activation:jakarta.activation-api:1.2.1" />
+      <element id="library" level="project" name="Gradle: jakarta.annotation:jakarta.annotation-api:1.3.5" />
+      <element id="library" level="project" name="Gradle: jakarta.xml.bind:jakarta.xml.bind-api:2.3.2" />
+      <element id="library" level="project" name="Gradle: junit:junit:4.12" />
+      <element id="library" level="project" name="Gradle: org.antlr:antlr4-runtime:4.5.2-1" />
       <element id="library" level="project" name="Gradle: org.bouncycastle:bcprov-jdk16:1.46" />
       <element id="library" level="project" name="Gradle: org.hamcrest:hamcrest-core:1.3" />
-      <element id="library" level="project" name="Gradle: junit:junit:4.12" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.3.61" />
-      <element id="library" level="project" name="Gradle: org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9" />
-      <element id="library" level="project" name="Gradle: jakarta.activation:jakarta.activation-api:1.2.1" />
-      <element id="library" level="project" name="Gradle: jakarta.xml.bind:jakarta.xml.bind-api:2.3.2" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.intellij.deps:trove4j:1.0.20181211" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-android-extensions:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-annotation-processing-gradle:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-build-common:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-compiler-embeddable:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-compiler-runner:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-daemon-client:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-daemon-embeddable:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-gradle-plugin-api:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-gradle-plugin-model:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-reflect:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-script-runtime:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-scripting-common:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-scripting-compiler-impl-embeddable:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-scripting-jvm:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-util-io:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-util-klib:1.4.21" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.4.2" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7" />
+      <element id="library" level="project" name="Gradle: org.jetbrains:annotations:13.0" />
+      <element id="library" level="project" name="Gradle: org.simplejavamail:core-module:6.4.4" />
+      <element id="library" level="project" name="Gradle: org.simplejavamail:simple-java-mail:6.4.4" />
+      <element id="library" level="project" name="Gradle: org.slf4j:slf4j-api:1.7.25" />
     </root>
   </artifact>
 </component>

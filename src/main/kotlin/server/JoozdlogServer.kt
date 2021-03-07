@@ -43,9 +43,13 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
      */
     @Throws(IOException::class)
     override fun handle(socket: Socket) {
-        val handler = Handler(IOWorker(socket))
-        handler.use {
-            it.handleAll()
+        try {
+            val handler = Handler(IOWorker(socket))
+            handler.use {
+                it.handleAll()
+            }
+        } catch (err: Throwable){
+            Logger.singleton.e("Error in JoozdlogServer.handle():\n${err.stackTraceToString()}")
         }
     }
 
@@ -67,7 +71,7 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
             }
             log.newLine()
             log.n("************************************")
-            log.n("*** Starting JoozdlogServer 0001 ***")
+            log.n("*** Starting JoozdlogServer 0004 ***")
             log.n("*** Logging level: ${log.level.toString().padStart(2, ' ')}            ***")
             log.n("************************************")
             log.newLine()
