@@ -4,6 +4,7 @@ import data.aircraft.AircraftTypesConsensus
 import extensions.sendError
 import nl.joozd.joozdlogcommon.AircraftType
 import nl.joozd.joozdlogcommon.ConsensusData
+import nl.joozd.joozdlogcommon.FeedbackData
 import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import nl.joozd.joozdlogcommon.comms.JoozdlogCommsKeywords
 import nl.joozd.joozdlogcommon.serializing.*
@@ -33,6 +34,12 @@ object ServerFunctions {
         socket.write(Instant.now().epochSecond.toByteArray())
 
     /**
+     * Generate a username and send it to client in the form of a string.
+     */
+    fun sendNewUsername(socket: IOWorker): Boolean =
+        socket.write(UserAdministration.generateUserName())
+
+    /**
      * Sends current AircraftTypesConsensus.aircraftTypes to client
      * @param socket: IOWorker to take care of transmission to client
      * @return true if success, false if exception caught
@@ -58,6 +65,13 @@ object ServerFunctions {
     fun sendForcedTypes(socket: IOWorker): Boolean {
         val payload = AircraftTypesConsensus.getInstance().serializedForcedTypes
         return socket.write(payload)
+    }
+
+    fun receiveFeedback(socket: IOWorker, extraData: ByteArray){
+        when (EmailFunctions.sendMeFeedbackMail(FeedbackData.deserialize(extraData))){
+            FunctionResult.SUCCESS -> socket.write(JoozdlogCommsKeywords.OK)
+            else -> socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
+        }
     }
 
 
@@ -111,7 +125,8 @@ object ServerFunctions {
 
     /**
      * Changes a password.
-     * @param newLoginData: New login data, using password and email (if not empty)
+     * @param rawLoginData: New login data, using password and email (if not empty), as ByteArray.
+     *                      This will be deserialized into a [LoginData] object
      */
     fun changePassword(socket: IOWorker, flightsStorage: FlightsStorage?, rawLoginData: ByteArray): FlightsStorage? {
         if (flightsStorage?.correctKey == false) return null.also { socket.write(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS) }

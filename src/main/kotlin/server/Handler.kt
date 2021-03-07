@@ -40,7 +40,7 @@ class Handler(private val socket: IOWorker): Closeable {
             val receivedMessage = socket.read()
             if (nextType(receivedMessage) == STRING){                       // check if package seems to start with a string
                 val request = unwrapString(nextWrap(receivedMessage))
-                val extraData = receivedMessage.slice(wrap(request).size until receivedMessage.size).toByteArray()
+                val extraData = receivedMessage.sliceArray(wrap(request).size until receivedMessage.size)
                 log.d("DEBUG: received request: $request from ${socket.clientAddress}")
                 when (request){ // keep this in same order as JoozdlogComsKeywords pls
                     JoozdlogCommsKeywords.HELLO -> {
@@ -71,6 +71,10 @@ class Handler(private val socket: IOWorker): Closeable {
                             flightsStorage.checkKey()
                             socket.write(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS)
                         }
+                    }
+
+                    JoozdlogCommsKeywords.REQUEST_NEW_USERNAME -> {
+                        ServerFunctions.sendNewUsername(socket)
                     }
 
 
@@ -106,10 +110,6 @@ class Handler(private val socket: IOWorker): Closeable {
                         }
                     }
 
-                    /**
-                     * Changes a users password and deletes saved data
-                     */
-                    JoozdlogCommsKeywords.CHANGE_PASSWORD -> TODO("not implemented")
 
                     /**
                      * Sets email hash for user if logged in
@@ -128,8 +128,8 @@ class Handler(private val socket: IOWorker): Closeable {
 
                     /**
                      * Decrypts users flights, changes its password, and encrypts data with new pass
-                     * On success updates [flightsStorage]
-                     * Expects a [LoginDataWithEmail] with key and possible email as [extraData]
+                     * On success updates flightsStorage
+                     * Expects a [LoginDataWithEmail] with key and possible email as extraData
                      */
                     JoozdlogCommsKeywords.UPDATE_PASSWORD -> {
                         log.n("UPDATE PASSWORD received", TAG)
@@ -141,14 +141,14 @@ class Handler(private val socket: IOWorker): Closeable {
 
                     /**
                      * Send a backup mail to user
-                     * [extraData] is [LoginDataWithEmail]
+                     * extraData is [LoginDataWithEmail]
                      * flightsStorage can be null, in that case login from loginData will be used.
                      */
                     JoozdlogCommsKeywords.REQUEST_BACKUP_MAIL -> ServerFunctions.sendBackupMail(socket, flightsStorage, extraData)
 
                     /**
                      * Send a login link mail to user
-                     * [extraData] is [LoginDataWithEmail]
+                     * extraData is [LoginDataWithEmail]
                      */
                     JoozdlogCommsKeywords.REQUEST_LOGIN_LINK_MAIL -> ServerFunctions.sendLoginLinkEmail(extraData)
 
@@ -156,7 +156,7 @@ class Handler(private val socket: IOWorker): Closeable {
                     /**
                      * expecting a bunch of packed serialized BasicFlights
                      * Will only work after logging in as otherwise no storage loaded
-                     * [extraData] should be formatted as packSerialized(basicFlightsList.map{it.serialize()})
+                     * extraData should be formatted as packSerialized(basicFlightsList.map{it.serialize()})
                      */
 
                     //TODO work should be done by worker not by handler
@@ -193,7 +193,7 @@ class Handler(private val socket: IOWorker): Closeable {
 
                     /**
                      * receive consensus data to add or remove from consensus
-                     * [extraData] should be packedList of ConsensusData.serialize()
+                     * extraData should be packedList of ConsensusData.serialize()
                      */
                     JoozdlogCommsKeywords.SENDING_AIRCRAFT_CONSENSUS -> ServerFunctions.addCToConsensus(socket, extraData)
 
@@ -206,6 +206,11 @@ class Handler(private val socket: IOWorker): Closeable {
                     JoozdlogCommsKeywords.REQUEST_FORCED_TYPES_VERSION -> ServerFunctions.sendForcedTypesVersion(socket)
 
                     JoozdlogCommsKeywords.REQUEST_FORCED_TYPES -> ServerFunctions.sendForcedTypes(socket)
+
+                    /**
+                     * extraData should be one serialized FeedbackData object
+                     */
+                    JoozdlogCommsKeywords.SENDING_FEEDBACK -> ServerFunctions.receiveFeedback(socket, extraData)
 
 
 
@@ -265,7 +270,7 @@ class Handler(private val socket: IOWorker): Closeable {
 
 
             } else {
-                log.v("Invalid request from ${socket.clientAddress}, stopping handleAll()")
+                log.n("Invalid request from ${socket.clientAddress}, stopping handleAll()", "Handler")
                 keepGoing = false
             }
                                 
