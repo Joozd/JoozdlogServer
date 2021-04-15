@@ -1,18 +1,14 @@
 package server
 
-import extensions.sendError
 import nl.joozd.joozdlogcommon.LoginData
 import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import nl.joozd.joozdlogcommon.comms.JoozdlogCommsKeywords
 import nl.joozd.joozdlogcommon.serializing.*
-import server.serverFunctions.FunctionResult
 import server.serverFunctions.ServerFunctions
 import storage.FlightsStorage
 import storage.UserAdministration
 import utils.Logger
 import java.io.Closeable
-import kotlin.collections.toByteArray
-
 /**
  * Handler should get an open IOWorker upon construction
  * It will use this socket to do all kinds of things.
@@ -97,7 +93,9 @@ class Handler(private val socket: IOWorker): Closeable {
                      * Creates a new user directory with password
                      * extraData should be <LogindataWithEmail>(serialized)
                      * //TODO move this whole thing to [ServerFunctions]
+                     * !!!!!NO LONGER USED!!!!!!!
                      */
+                    /*
                     JoozdlogCommsKeywords.NEW_ACCOUNT_EMAIL -> {
                         LoginDataWithEmail.deserialize(extraData).let {ld ->
                             flightsStorage = UserAdministration.createNewUser(LoginData(ld.userName, ld.password, ld.basicFlightVersion))
@@ -109,6 +107,7 @@ class Handler(private val socket: IOWorker): Closeable {
                             }
                         }
                     }
+                    */
 
 
                     /**
