@@ -14,7 +14,7 @@ import java.io.IOException
 import java.time.Instant
 
 object UserAdministration {
-    private const val EMPTY_FLIGHT_LIST = 0
+
     private const val USERNAME_LENGTH = 16 // characters. [a-zA-z0-9]
     private val USERNAME_CHARACTERS = ('a'..'z').joinToString("") + ('A'..'Z').joinToString("") + ('0'..'9').joinToString("")
 
@@ -32,9 +32,11 @@ object UserAdministration {
      *  @return null if user exists, FlightsStorage if not
      */
     fun createNewUser(loginData: LoginData): FlightsStorage? {
-        if (File(userFilesDirectory + loginData.userName).exists()) return null
+        if (File(userFilesDirectory + loginData.userName).exists()) return null.also{
+            log.w("Trying to create a user that already exists: ${loginData.userName}", "createNewUser()")
+        }
         File(userFilesDirectory + loginData.userName).createNewFile()
-        println(userFilesDirectory + loginData.userName)
+        log.v("Created new file ${userFilesDirectory + loginData.userName}", "createNewUser()")
         return makeNewFile(loginData)
     }
 
@@ -51,7 +53,7 @@ object UserAdministration {
     private fun makeNewFile(loginData: LoginData, flights: List<BasicFlight>? = null): FlightsStorage? {
         if (!File(userFilesDirectory + loginData.userName).exists()) return null
         val hash = SHACrypto.hashWithExtraSalt(loginData.userName, loginData.password)
-        val version = EMPTY_FLIGHT_LIST.toByteArray()
+        val version = FlightsStorage.EMPTY_FLIGHT_LIST.toByteArray()
         val timestamp = Instant.now().epochSecond
         val timestampBytes = timestamp.toByteArray()
         File(userFilesDirectory + loginData.userName).writeBytes(hash + version + timestampBytes)

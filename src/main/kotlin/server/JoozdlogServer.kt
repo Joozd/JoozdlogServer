@@ -69,12 +69,11 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
                 addTimestamp = true
                 level = Settings.logLevel
             }
-            log.newLine()
-            log.n("************************************")
-            log.n("*** Starting JoozdlogServer 0004 ***")
-            log.n("*** Logging level: ${log.level.toString().padStart(2, ' ')}            ***")
-            log.n("************************************")
-            log.newLine()
+            log.n(  "\n************************************\n" +
+                            "*** Starting JoozdlogServer 0006 ***\n" +
+                            "*** Logging level: ${log.level.toString().padStart(2, ' ')}            ***\n" +
+                            "************************************\n")
+
 
             val port = DefaultServerPort
             val type = "TLS"

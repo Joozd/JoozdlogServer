@@ -175,7 +175,7 @@ object ServerFunctions {
         try{
             unwrapString(extraData).split(":").let{
                 when(EmailRepository.tryToConfirmEmail(it.first(), Base64.getDecoder().decode(it.last()))){
-                    true -> socket.write(JoozdlogCommsKeywords.OK)
+                    true -> socket.ok()
                     false -> socket.sendError(JoozdlogCommsKeywords.EMAIL_NOT_KNOWN_OR_VERIFIED)
                     null -> socket.sendError(JoozdlogCommsKeywords.UNKNOWN_USER_OR_PASS)
                 }
@@ -184,7 +184,20 @@ object ServerFunctions {
     }
 
 
-    fun sendLoginLinkEmail(rawLoginDataWithEmail: ByteArray) = EmailFunctions.sendLoginLinkEmail(LoginDataWithEmail.deserialize(rawLoginDataWithEmail))
+    fun sendLoginLinkEmail(socket: IOWorker, rawLoginDataWithEmail: ByteArray) {
+        val loginData = LoginDataWithEmail.deserialize(rawLoginDataWithEmail)
+        when (val result = EmailFunctions.sendLoginLinkEmail(loginData)){
+            FunctionResult.SUCCESS -> {
+                socket.ok()
+                log.v("Sent login link to user ${loginData.userName}", "sendLoginLinkEmail")
+            }
+            FunctionResult.BAD_EMAIL_ADDRESS -> {
+                socket.sendError(JoozdlogCommsKeywords.NOT_A_VALID_EMAIL_ADDRESS)
+                log.v("Bad emailaddress \"${loginData.email}\" for user ${loginData.userName}", "sendLoginLinkEmail")
+            }
+            else -> log.e("Invalid response from EmailFunctions.sendLoginLinkEmail(): $result")
+        }
+    }
 
 
 
@@ -228,6 +241,10 @@ object ServerFunctions {
             else -> socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
         }
     }
+
+
+    private fun IOWorker.ok() = write(JoozdlogCommsKeywords.OK)
+
 
 
 

@@ -41,7 +41,7 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
         println("name: ${loginData.userName}")
     }
     private val file = File(userFilesDirectory + loginData.userName)
-    private val hash = SHACrypto.hashWithExtraSalt(loginData.userName, loginData.password)
+    private val hash = generateHashFromLoginData(loginData)
     private val requestedVersion = loginData.basicFlightVersion
 
     private val fileExists: Boolean
@@ -70,7 +70,8 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
                     it.skip(32) // discard first 32 bytes as they are hash
                     val version = intFromBytes(it.readNBytes(4))
                     val timeStamp = longFromBytes(it.readNBytes(8))
-                    val decryptedFlights = AESCrypto.decrypt(loginData.password, it.readAllBytes().takeIf { b -> b.isNotEmpty() })
+                    val decryptedFlights = if (version == EMPTY_FLIGHT_LIST) null
+                        else AESCrypto.decrypt(loginData.password, it.readAllBytes().takeIf { b -> b.isNotEmpty() })
                     println("decrypted ${decryptedFlights?.size} bytes")
                     println("version is $version")
 
@@ -144,5 +145,12 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
         val ff = flightsFile
         return if (ff == null) null
         else BasicFlightVersionFunctions.makeVersionAndSerialize(ff.flights.filter(predicate), requestedVersion)
+    }
+
+    companion object{
+        // Static function so other functions (ie. creating new file) can use this as well
+        fun generateHashFromLoginData(loginData: LoginData): ByteArray =
+            SHACrypto.hashWithExtraSalt(loginData.userName, loginData.password)
+        const val EMPTY_FLIGHT_LIST = 0
     }
 }
