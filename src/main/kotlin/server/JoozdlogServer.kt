@@ -70,7 +70,7 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
                 level = Settings.logLevel
             }
             log.n(  "\n************************************\n" +
-                            "*** Starting JoozdlogServer 0006 ***\n" +
+                            "*** Starting JoozdlogServer 0008 ***\n" +
                             "*** Logging level: ${log.level.toString().padStart(2, ' ')}            ***\n" +
                             "************************************\n")
 

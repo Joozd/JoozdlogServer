@@ -23,6 +23,8 @@ import java.time.Instant
  * - 4 bytes stating it's version number (the version of BasicFlight used)
  *      - if version is 0, no flights stored (only hash, version, timestamp)
  * - 8 bytes making a timestamp of when the file was last saved
+ *
+ * Upon opening it will restore backups if they exist
  */
 class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: FlightsFile? = null) {
     constructor (loginDataWithEmail: LoginDataWithEmail, forcedFlightsFile: FlightsFile? = null):
@@ -32,14 +34,19 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
                 basicFlightVersion = loginDataWithEmail.basicFlightVersion
             ), forcedFlightsFile)
 
+    private val log = Logger.singleton
+
+    init{
+        try {
+            restoreAndDeleteBackups()
+        } catch (e: SecurityException){
+            log.w("Unable to delete baclup files: SecurityException: ${e.message}", this::class.simpleName)
+        }
+    }
 
     private val userFilesDirectory
         get() = Settings["userDir"]
-    private val log = Logger.singleton
-    init{
-        println("Init FlightsStorage")
-        println("name: ${loginData.userName}")
-    }
+
     private val file = File(userFilesDirectory + loginData.userName)
     private val hash = generateHashFromLoginData(loginData)
     private val requestedVersion = loginData.basicFlightVersion
@@ -92,10 +99,21 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
     /**
      * Write stuff to file.
      * @return true if OK, false if error
+     * Temporary stores data in a backupFile in case server dies halfway
      */
     private fun writeStuffToFile(stuff: ByteArray): Boolean{
         return try {
+
+            // get a fresh destination for backup file
+            var backupTries = 0
+            var backupFile = File(userFilesDirectory + loginData.userName + BACKUP_APPENDIX)
+            while (backupFile.exists()){
+                backupFile = File(userFilesDirectory + loginData.userName + BACKUP_APPENDIX + "${backupTries++}")
+            }
+            //backup old file in case server dies halfway
+            file.renameTo(backupFile)
             file.writeBytes(stuff)
+            backupFile.delete()
             true
         } catch (e: Exception){
             e.printStackTrace()
@@ -147,10 +165,32 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
         else BasicFlightVersionFunctions.makeVersionAndSerialize(ff.flights.filter(predicate), requestedVersion)
     }
 
+
+    /**
+     * Restures and deletes any backups found
+     * @return true if a backup was restored, false if not
+     * @throws SecurityException if deleting backup files is denied by [SecurityManager.checkDelete]
+     */
+    private fun restoreAndDeleteBackups(): Boolean{
+        var backupFile = File(userFilesDirectory + loginData.userName + BACKUP_APPENDIX)
+        if (!backupFile.exists()) return false
+        var counter = 0
+        while (File(userFilesDirectory + loginData.userName + BACKUP_APPENDIX + "${counter++}").exists()){
+            backupFile = File(userFilesDirectory + loginData.userName + BACKUP_APPENDIX + "${counter++}")
+        }
+        file.delete()
+        backupFile.renameTo(file)
+        counter = 0
+        while (File(userFilesDirectory + loginData.userName + BACKUP_APPENDIX + "${counter++}").exists()){
+            File(userFilesDirectory + loginData.userName + BACKUP_APPENDIX + "${counter++}").delete()
+        }
+        return true
+    }
     companion object{
         // Static function so other functions (ie. creating new file) can use this as well
         fun generateHashFromLoginData(loginData: LoginData): ByteArray =
             SHACrypto.hashWithExtraSalt(loginData.userName, loginData.password)
         const val EMPTY_FLIGHT_LIST = 0
+        const val BACKUP_APPENDIX = ".backup"
     }
 }
