@@ -11,7 +11,7 @@ jar {
 }
 
 group 'nl.joozd'
-version '0.1'
+version '0.1.9'
 
 sourceCompatibility = 1.8
 
