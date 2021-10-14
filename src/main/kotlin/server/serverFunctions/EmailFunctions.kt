@@ -11,12 +11,18 @@ import storage.EmailRepository
 import storage.FlightsStorage
 import utils.CsvExporter
 import utils.Logger
+import utils.MailsBuilder
+import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import javax.activation.FileDataSource
 
 object EmailFunctions {
     private val log = Logger.singleton
+
+
+
     fun sendTestEmail() =
         sendMail("HALLON TEST AMIL AUB GRGR", "Joozdlog Test email", "joozd@joozd.nl")
 
@@ -38,6 +44,8 @@ object EmailFunctions {
                 content = "Hallon dit moet nog beter worden. Met HTML enzo. Maar voor nu: je backup csv dinges.\n\nVeel plezier!\nXOXO Joozd!",
                 subject = "Joozdlog Backup CSV",
                 to = email,
+                htmlContent = MailsBuilder.buildBackupMailHtml(),
+                images = MailsBuilder.getImages("joozdlog_logo_email"),
                 attachment = CsvExporter(it).toByteArray(),
                 attachmentName = "JoozdlogBackup - $date.csv",
                 attachmentType = "text/csv"
@@ -56,8 +64,10 @@ object EmailFunctions {
         val loginLink = "https://joozdlog.joozd.nl/inject-key/${loginData.userName}:$passwordString"
 
         return sendMail(
-            content = "Hallon dit moet nog beter worden. Met HTML enzo. Maar voor nu: Je login link!\n\n$loginLink\n\nVeel plezier!\nXOXO Joozd!",
+            content = "Hallon Je login link!\n\n$loginLink\n\nVeel plezier!\nXOXO Joozd!",
             subject = Settings["emailSubject"]?: "Joozdlog Login Link",
+            htmlContent = MailsBuilder.buildLoginLinkMailHtml(loginLink),
+            images = MailsBuilder.getImages("joozdlog_logo_email"),
             to = loginData.email)
         }
 
@@ -73,9 +83,11 @@ object EmailFunctions {
         val confirmationLink = "https://joozdlog.joozd.nl/verify-email/${loginData.userName}:$hashedEmailBase64"
         log.d(confirmationLink)
         return sendMail(
-            content = "Hallon dit is een email van Joozdlog\n\nVriendelijk verzoek om deze link te openen met JoozdLog, want ik ben te lui om een webserver op te zetten.\n\n" +
+            content = "Hallon \n\nVriendelijk verzoek om deze link te openen met JoozdLog, want ik ben te lui om een webserver op te zetten.\n\n" +
             "link:\n$confirmationLink\n\nVeel logplezier,\nJoozd",
             subject = "Joozdlog email confirmation mail",
+            htmlContent = MailsBuilder.buildEmailConfirmationMailHtml(confirmationLink),
+            images = MailsBuilder.getImages("joozdlog_logo_email"),
             to = loginData.email)
     }
 
@@ -107,30 +119,55 @@ object EmailFunctions {
      * @return SUCCESS or BAD_EMAIL_ADDRESS
      */
 
-    private fun sendMail(content: String, subject: String, to: String, attachment: ByteArray? = null, attachmentName: String? = null, attachmentType: String? = null, fromName: String = "JoozdLog Airline Pilots\' Logbook"): FunctionResult{
+    private fun sendMail(
+        content: String,
+        subject: String,
+        to: String,
+        htmlContent: String? = null,
+        images: List<File> = emptyList(),
+        attachment: ByteArray? = null,
+        attachmentName: String? = null,
+        attachmentType: String? = null,
+        fromName: String = "JoozdLog Airline Pilots\' Logbook"
+    ): FunctionResult{
         if (!seemsToBeAnEmail(to)) return FunctionResult.BAD_EMAIL_ADDRESS.also {log.d("Bad email address")}
         log.d("Sending a mail with subject $subject to $to")
 
-        val email = attachment?.let{
-            EmailBuilder.startingBlank()
+        val email = EmailBuilder.startingBlank()
             .from(fromName, Settings["emailFrom"]!!)
             .to(to)
             .withSubject(subject)
             .withPlainText(content)
-            .withAttachment(attachmentName!!, attachment, attachmentType!!)
-            .buildEmail()
-        } ?: EmailBuilder.startingBlank()
-            .from(fromName, Settings["emailFrom"]!!)
-            .to(to)
-            .withSubject(subject)
-            .withPlainText(content)
-            .buildEmail()
+
+        // add HTML content if any
+        if(htmlContent != null)
+            log.v("Adding HTML to email","sendMail()")
+            email.withHTMLText(htmlContent)
+
+        // add attachment if any
+        if (attachment != null && attachmentType != null && attachmentName != null)
+            email.withAttachment(attachmentName, attachment, attachmentType)
+        else if (attachment != null && attachmentType != null && attachmentName != null)
+            log.w("Attachment, attachment type or attachment name not null even though one or more of the others is", "sendMail()")
+
+        /**
+         * Images will only work if correct placeholders in html file
+         * ie. cid:image_1, cid:image_2 etc
+         */
+        if (images.isNotEmpty()) {
+            images.forEachIndexed { index, file ->
+                log.v("Adding image to email", "sendMail()")
+                val id = "${CID_PREFIX}${index+1}"
+                email.withEmbeddedImage(id, FileDataSource(file) )
+            }
+        }
+
 
         MailerBuilder
             .withSMTPServer("smtp03.hostnet.nl", 587, Settings["emailFrom"]!!, Settings["noReply"])
             .withTransportStrategy(TransportStrategy.SMTP_TLS)
             .buildMailer()
-            .sendMail(email)
+            .sendMail(email.buildEmail())
         return FunctionResult.SUCCESS
     }
 
@@ -143,4 +180,6 @@ object EmailFunctions {
                 "[a-zA-Z0-9][a-zA-Z0-9\\-]{0,25}" +
                 ")+").toRegex()
 
+
+    const val CID_PREFIX = "image_"
 }

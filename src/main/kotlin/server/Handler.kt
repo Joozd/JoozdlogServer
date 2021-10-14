@@ -90,27 +90,6 @@ class Handler(private val socket: IOWorker): Closeable {
                     }
 
                     /**
-                     * Creates a new user directory with password
-                     * extraData should be <LogindataWithEmail>(serialized)
-                     * //TODO move this whole thing to [ServerFunctions]
-                     * !!!!!NO LONGER USED!!!!!!!
-                     */
-                    /*
-                    JoozdlogCommsKeywords.NEW_ACCOUNT_EMAIL -> {
-                        LoginDataWithEmail.deserialize(extraData).let {ld ->
-                            flightsStorage = UserAdministration.createNewUser(LoginData(ld.userName, ld.password, ld.basicFlightVersion))
-                            if (flightsStorage == null)
-                                socket.sendError(JoozdlogCommsKeywords.USER_ALREADY_EXISTS)
-                            else {
-                                log.n("Created new user: ${ld.userName}", NEW_USER_TAG)
-                                ServerFunctions.setEmailForUser(socket, extraData)  // this will send OK or other message
-                            }
-                        }
-                    }
-                    */
-
-
-                    /**
                      * Sets email hash for user if logged in
                      * Extradata is expected to be [LoginDataWithEmail]
                      */
@@ -149,7 +128,7 @@ class Handler(private val socket: IOWorker): Closeable {
                      * Send a login link mail to user
                      * extraData is [LoginDataWithEmail]
                      */
-                    JoozdlogCommsKeywords.REQUEST_LOGIN_LINK_MAIL -> ServerFunctions.sendLoginLinkEmail(extraData)
+                    JoozdlogCommsKeywords.REQUEST_LOGIN_LINK_MAIL -> ServerFunctions.sendLoginLinkEmail(socket, extraData)
 
 
                     /**
