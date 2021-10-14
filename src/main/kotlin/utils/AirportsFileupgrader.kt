@@ -2,7 +2,7 @@ package utils
 
 import nl.joozd.joozdlogcommon.BasicAirport
 import nl.joozd.joozdlogcommon.legacy.basicairport.BasicAirport_version1
-import nl.joozd.joozdlogcommon.serializing.*
+import nl.joozd.serializing.*
 import java.io.File
 
 class AirportsFileupgrader {

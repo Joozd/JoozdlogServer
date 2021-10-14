@@ -2,8 +2,8 @@ package storage
 
 import crypto.AESCrypto
 import nl.joozd.joozdlogcommon.BasicFlight
-import nl.joozd.joozdlogcommon.serializing.toByteArray
-import nl.joozd.joozdlogcommon.serializing.packSerialized
+import nl.joozd.serializing.toByteArray
+import nl.joozd.serializing.packSerialized
 
 /**
  * This holds flights with some metadata:

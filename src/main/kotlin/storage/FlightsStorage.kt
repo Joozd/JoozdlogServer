@@ -7,8 +7,8 @@ import nl.joozd.joozdlogcommon.BasicFlight
 import nl.joozd.joozdlogcommon.LoginData
 import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import nl.joozd.joozdlogcommon.legacy.basicflight.BasicFlightVersionFunctions
-import nl.joozd.joozdlogcommon.serializing.intFromBytes
-import nl.joozd.joozdlogcommon.serializing.longFromBytes
+import nl.joozd.serializing.intFromBytes
+import nl.joozd.serializing.longFromBytes
 import settings.Settings
 import utils.Logger
 import java.io.BufferedInputStream

@@ -1,9 +1,9 @@
 package data.aircraft
 
 import nl.joozd.joozdlogcommon.AircraftType
-import nl.joozd.joozdlogcommon.serializing.listFromBytes
-import nl.joozd.joozdlogcommon.serializing.mapFromBytes
-import nl.joozd.joozdlogcommon.serializing.toByteArray
+import nl.joozd.serializing.listFromBytes
+import nl.joozd.serializing.mapFromBytes
+import nl.joozd.serializing.toByteArray
 import settings.Settings
 import java.io.File
 
@@ -179,7 +179,7 @@ class AircraftTypesConsensus(private val aircraftFile: File, private val consens
     private fun checkConsensus(tcList: List<TypeCounter>): AircraftType?{
         if (tcList.isEmpty()) return null
         val totalCount = tcList.map{it.count}.sum()
-        return tcList.maxBy { it.count }?.let {candidate ->
+        return tcList.maxByOrNull { it.count }?.let { candidate ->
             if (candidate.count / totalCount.toDouble() > consensusLimit) candidate.type else null
         }
     }

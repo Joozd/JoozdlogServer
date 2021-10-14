@@ -1,12 +1,12 @@
 package data.aircraft
 
 import nl.joozd.joozdlogcommon.AircraftType
-import nl.joozd.joozdlogcommon.serializing.JoozdlogSerializable
-import nl.joozd.joozdlogcommon.serializing.unwrap
-import nl.joozd.joozdlogcommon.serializing.wrap
+import nl.joozd.serializing.JoozdSerializable
+import nl.joozd.serializing.unwrap
+import nl.joozd.serializing.wrap
 
 
-data class TypeCounter(val type: AircraftType, val count: Int): JoozdlogSerializable {
+data class TypeCounter(val type: AircraftType, val count: Int): JoozdSerializable {
     override fun equals(other: Any?): Boolean {
         if (other !is TypeCounter) return false
         return other.type == type
@@ -27,7 +27,7 @@ data class TypeCounter(val type: AircraftType, val count: Int): JoozdlogSerializ
     }
 
 
-    companion object: JoozdlogSerializable.Creator {
+    companion object: JoozdSerializable.Deserializer<TypeCounter> {
 
         override fun deserialize(source: ByteArray): TypeCounter {
             val wraps = TypeCounter.serializedToWraps(source)

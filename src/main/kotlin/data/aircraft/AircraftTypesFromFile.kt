@@ -1,7 +1,7 @@
 package data.aircraft
 
 import nl.joozd.joozdlogcommon.AircraftType
-import nl.joozd.joozdlogcommon.serializing.packSerialized
+import nl.joozd.serializing.packSerialized
 import java.io.File
 
 /**

@@ -1,8 +1,8 @@
 package data.email
 
-import nl.joozd.joozdlogcommon.serializing.JoozdlogSerializable
-import nl.joozd.joozdlogcommon.serializing.unwrap
-import nl.joozd.joozdlogcommon.serializing.wrap
+import nl.joozd.serializing.JoozdSerializable
+import nl.joozd.serializing.unwrap
+import nl.joozd.serializing.wrap
 
 /**
  * This will be used to represent hashed data for checking if an email address has been confirmed.
@@ -13,7 +13,7 @@ import nl.joozd.joozdlogcommon.serializing.wrap
  */
 
 @Suppress("ArrayInDataClass") // don't compare this
-data class EmailHashData(val salt: ByteArray, val hash: ByteArray, val confirmed: Boolean): JoozdlogSerializable {
+data class EmailHashData(val salt: ByteArray, val hash: ByteArray, val confirmed: Boolean): JoozdSerializable {
     override fun serialize(): ByteArray {
         var serialized = ByteArray(0)
         serialized += wrap(component1())
@@ -22,7 +22,7 @@ data class EmailHashData(val salt: ByteArray, val hash: ByteArray, val confirmed
         return serialized
     }
 
-    companion object : JoozdlogSerializable.Creator {
+    companion object : JoozdSerializable.Deserializer<EmailHashData> {
 
         override fun deserialize(source: ByteArray): EmailHashData {
             val wraps = serializedToWraps(source)

@@ -1,8 +1,8 @@
 package server
 
 import data.Identifiers
-import nl.joozd.joozdlogcommon.comms.Packet
-import nl.joozd.joozdlogcommon.serializing.intFromBytes
+import nl.joozd.comms.Packet
+import nl.joozd.serializing.intFromBytes
 import settings.Settings
 import utils.Logger
 

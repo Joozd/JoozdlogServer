@@ -3,7 +3,7 @@ package server
 import nl.joozd.joozdlogcommon.LoginData
 import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import nl.joozd.joozdlogcommon.comms.JoozdlogCommsKeywords
-import nl.joozd.joozdlogcommon.serializing.*
+import nl.joozd.serializing.*
 import server.serverFunctions.ServerFunctions
 import storage.FlightsStorage
 import storage.UserAdministration

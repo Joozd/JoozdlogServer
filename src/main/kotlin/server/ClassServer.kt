@@ -1,19 +1,9 @@
 package server
-
+/*
 import java.io.*
 import java.net.ServerSocket
 import java.net.Socket
 
-
-/*
- * ClassServer.java -- a simple file server that can serve
- * Http get request in both clear and secure channel
- */
-
-/*
- * ClassServer.java -- a simple file server that can serve
- * Http get request in both clear and secure channel
- */
 abstract class ClassServer protected constructor(ss: ServerSocket?) : Runnable {
     private var server: ServerSocket? = null
     /**
@@ -67,3 +57,5 @@ abstract class ClassServer protected constructor(ss: ServerSocket?) : Runnable {
         newListener()
     }
 }
+
+ */

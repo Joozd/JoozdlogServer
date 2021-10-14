@@ -1,7 +1,7 @@
 package storage
 
-import nl.joozd.joozdlogcommon.serializing.SIZE_WRAPPED_INT
-import nl.joozd.joozdlogcommon.serializing.unwrapInt
+import nl.joozd.serializing.SIZE_WRAPPED_INT
+import nl.joozd.serializing.unwrapInt
 import settings.Settings
 import java.io.File
 

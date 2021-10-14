@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.4.21'
+    id 'org.jetbrains.kotlin.jvm' version '1.5.31'
 }
 jar {
     manifest {
@@ -17,7 +17,6 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
-    jcenter()
 }
 
 compileKotlin {
@@ -26,13 +25,16 @@ compileKotlin {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2"
+    implementation files("C:\\Users\\joozd\\IdeaProjects\\libs\\joozdserializing-jvm-0.1.jar")
+    implementation files("C:\\Users\\joozd\\IdeaProjects\\libs\\comms\\comms.0.1.2.jar")
+
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.31'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt'
     implementation files("C:\\Users\\joozd\\StudioProjects\\LogbookApp\\joozdlogCommon\\build\\libs\\joozdlogCommon.jar")
 
     implementation("org.bouncycastle:bcprov-jdk16:1.46")
 
-    implementation "org.simplejavamail:simple-java-mail:6.4.4"
+    implementation 'org.simplejavamail:simple-java-mail:6.6.1'
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

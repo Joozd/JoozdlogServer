@@ -5,7 +5,7 @@ import extensions.readNBytes
 import nl.joozd.joozdlogcommon.BasicFlight
 import nl.joozd.joozdlogcommon.LoginData
 import nl.joozd.joozdlogcommon.LoginDataWithEmail
-import nl.joozd.joozdlogcommon.serializing.toByteArray
+import nl.joozd.serializing.toByteArray
 import settings.Settings
 import utils.Logger
 import utils.RandomGenerator

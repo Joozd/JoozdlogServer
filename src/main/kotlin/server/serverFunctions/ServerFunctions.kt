@@ -7,7 +7,7 @@ import nl.joozd.joozdlogcommon.ConsensusData
 import nl.joozd.joozdlogcommon.FeedbackData
 import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import nl.joozd.joozdlogcommon.comms.JoozdlogCommsKeywords
-import nl.joozd.joozdlogcommon.serializing.*
+import nl.joozd.serializing.*
 import server.IOWorker
 import storage.AirportsStorage
 import storage.EmailRepository
