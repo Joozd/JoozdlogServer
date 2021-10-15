@@ -28,9 +28,11 @@ dependencies {
     implementation files("C:\\Users\\joozd\\IdeaProjects\\libs\\joozdserializing-jvm-0.1.jar")
     implementation files("C:\\Users\\joozd\\IdeaProjects\\libs\\comms\\comms.0.1.2.jar")
 
+    implementation files("C:\\Users\\joozd\\StudioProjects\\LogbookApp\\joozdlogCommon\\build\\libs\\joozdlogCommon.jar")
+
     implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.31'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt'
-    implementation files("C:\\Users\\joozd\\StudioProjects\\LogbookApp\\joozdlogCommon\\build\\libs\\joozdlogCommon.jar")
+
 
     implementation("org.bouncycastle:bcprov-jdk16:1.46")
 
