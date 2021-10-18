@@ -64,7 +64,7 @@ object EmailFunctions {
         val loginLink = "https://joozdlog.joozd.nl/inject-key/${loginData.userName}:$passwordString"
 
         return sendMail(
-            content = "Hallon Je login link!\n\n$loginLink\n\nVeel plezier!\nXOXO Joozd!",
+            content = "This is your Joozdlog Login Link\n\n$loginLink\n\nPlease store this somewhere safe as it will give full control to your logbook, and you won't be able to sync your logbook on a new install without it.",
             subject = Settings["emailSubject"]?: "Joozdlog Login Link",
             htmlContent = MailsBuilder.buildLoginLinkMailHtml(loginLink),
             images = MailsBuilder.getImages("joozdlog_logo_email"),
@@ -73,7 +73,6 @@ object EmailFunctions {
 
     /**
      * Send an email address confirmation mail
-     * //TODO get mail from a file (html) and own address and subject from [Settings]
      */
 
     fun sendEmailConfirmationMail(loginData: LoginDataWithEmail, hashData: EmailHashData): FunctionResult{
@@ -83,8 +82,8 @@ object EmailFunctions {
         val confirmationLink = "https://joozdlog.joozd.nl/verify-email/${loginData.userName}:$hashedEmailBase64"
         log.d(confirmationLink)
         return sendMail(
-            content = "Hallon \n\nVriendelijk verzoek om deze link te openen met JoozdLog, want ik ben te lui om een webserver op te zetten.\n\n" +
-            "link:\n$confirmationLink\n\nVeel logplezier,\nJoozd",
+            content = "Please open this link with the JoozdLog app because I didn't make a webserver to accept this yet.\n\n" +
+            "link:\n$confirmationLink\n\nEnjoy,\nJoozd",
             subject = "Joozdlog email confirmation mail",
             htmlContent = MailsBuilder.buildEmailConfirmationMailHtml(confirmationLink),
             images = MailsBuilder.getImages("joozdlog_logo_email"),
