@@ -56,13 +56,12 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
                 level = Settings.logLevel
             }
             log.n(  "\n************************************\n" +
-                            "*** Starting JoozdlogServer 0012 ***\n" +
+                            "*** Starting JoozdlogServer 0013 ***\n" +
                             "*** Logging level: ${log.level.toString().padStart(2, ' ')}            ***\n" +
                             "************************************\n")
 
 
             val port = DefaultServerPort
-            val type = "TLS"
             try {
                 val ss = JoozdCommsServerSocketFactory.getServerSocketFactory(
                     keyStoreFile = "letsencrypt.jks",
