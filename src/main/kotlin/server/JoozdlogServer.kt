@@ -2,6 +2,7 @@ package server
 
 import nl.joozd.comms.JoozdCommsServerSocketFactory
 import nl.joozd.comms.ClassServer
+import nl.joozd.comms.IOWorker
 import settings.Settings
 import utils.Logger
 import java.io.*
@@ -55,7 +56,7 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
                 level = Settings.logLevel
             }
             log.n(  "\n************************************\n" +
-                            "*** Starting JoozdlogServer 0009 ***\n" +
+                            "*** Starting JoozdlogServer 0012 ***\n" +
                             "*** Logging level: ${log.level.toString().padStart(2, ' ')}            ***\n" +
                             "************************************\n")
 

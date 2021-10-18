@@ -1,6 +1,5 @@
 package server
-
-import data.Identifiers
+/*
 import nl.joozd.comms.Packet
 import nl.joozd.serializing.intFromBytes
 import settings.Settings
@@ -17,10 +16,11 @@ import java.net.Socket
  * It should be closed after usage, which will close the socket.
  * @param socket: An open socket to be used for communications
  */
+
 class IOWorker(private val socket: Socket): Closeable {
     private val outputStream = socket.getOutputStream()
     private val inputStream = BufferedInputStream(socket.getInputStream())
-    val clientAddress = socket.inetAddress.hostName
+    val otherAddress = socket.inetAddress.hostName
 
     /**
      * returns the next input from client
@@ -58,7 +58,7 @@ class IOWorker(private val socket: Socket): Closeable {
     @Throws(IOException::class)
     private fun getInput(inputStream: BufferedInputStream): ByteArray {
         val buffer = ByteArray(8192)
-        val header = ByteArray(Identifiers.HEADER.size + 4)
+        val header = ByteArray(Packet.HEADER_LENGTH + 4)
 
         //Read the header as it comes in, or fail trying.
         repeat(header.size) {
@@ -79,3 +79,5 @@ class IOWorker(private val socket: Socket): Closeable {
         return message.toByteArray()
     }
 }
+
+ */

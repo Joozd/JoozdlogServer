@@ -1,10 +1,13 @@
 package server
 
+import nl.joozd.comms.CommsKeywords
+import nl.joozd.comms.IOWorker
 import nl.joozd.joozdlogcommon.LoginData
 import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import nl.joozd.joozdlogcommon.comms.JoozdlogCommsKeywords
 import nl.joozd.serializing.*
 import server.serverFunctions.ServerFunctions
+import settings.Settings
 import storage.FlightsStorage
 import storage.UserAdministration
 import utils.Logger
@@ -29,22 +32,17 @@ class Handler(private val socket: IOWorker): Closeable {
         var keepGoing = true
         var flightsStorage: FlightsStorage? = null
 
-        @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-        var protocolVersion: Int? = null // not used at the moment, but useful when updating protocol
-
         while (keepGoing) {
-            val receivedMessage = socket.read()
+            val receivedMessage = socket.read(Settings.maxMessageSize)
             if (nextType(receivedMessage) == STRING){                       // check if package seems to start with a string
                 val request = unwrapString(nextWrap(receivedMessage))
                 val extraData = receivedMessage.sliceArray(wrap(request).size until receivedMessage.size)
-                log.d("DEBUG: received request: $request from ${socket.clientAddress}")
+                log.d("DEBUG: received request: $request from ${socket.otherAddress}")
                 when (request){ // keep this in same order as JoozdlogComsKeywords pls
-                    JoozdlogCommsKeywords.HELLO -> {
-                        @Suppress("UNUSED_VALUE")
-                        protocolVersion = intFromBytes(extraData)
-                    } // not used at the moment, but useful when updating protocol
-
-                    // JoozdlogCommsKeywords.NEXT_IS_COMPRESSED -> TODO("not implemented")
+                    CommsKeywords.HELLO -> {
+                        // not used at the moment, but useful when updating protocol
+                        // Currently this is HELLO_V1, in case protocol 2 gets used, another HELLO will be given.
+                    }
 
                     JoozdlogCommsKeywords.REQUEST_TIMESTAMP -> ServerFunctions.sendTimestamp(socket)
 
@@ -55,7 +53,7 @@ class Handler(private val socket: IOWorker): Closeable {
                     JoozdlogCommsKeywords.LOGIN -> {
                         val loginData = LoginData.deserialize(extraData)
                         flightsStorage = FlightsStorage(loginData)
-                        log.n("login attempt for ${loginData.userName} from ${socket.clientAddress}", LOGIN_TAG)
+                        log.n("login attempt for ${loginData.userName} from ${socket.otherAddress}", LOGIN_TAG)
                         log.n(if (flightsStorage.correctKey) "success" else "failed", LOGIN_TAG)
                         /*
                         - Server checks if file [username] exists, if so, it loads flights/aircraft from files
@@ -144,11 +142,11 @@ class Handler(private val socket: IOWorker): Closeable {
                                 socket.write(JoozdlogCommsKeywords.OK)
                                 log.v("received $it flights from client", FLIGHTS_FILE_TAG)
                             } ?: run {
-                                log.e("error while adding flights from client ${socket.clientAddress}", FLIGHTS_FILE_TAG)
+                                log.e("error while adding flights from client ${socket.otherAddress}", FLIGHTS_FILE_TAG)
                                 socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
                             }
                         } ?: socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN).also{
-                            log.w("user at ${socket.clientAddress} wanted to send flights while not logged in", FLIGHTS_FILE_TAG)
+                            log.w("user at ${socket.otherAddress} wanted to send flights while not logged in", FLIGHTS_FILE_TAG)
                         }
                     }
 
@@ -164,7 +162,7 @@ class Handler(private val socket: IOWorker): Closeable {
                             log.v("sending ${ff.flights.filter { it.timeStamp > timeStamp }.size} flights to client", TAG)
                             socket.write(flightsStorage?.filteredFlightsAsBytes { it.timeStamp > timeStamp } ?: JoozdlogCommsKeywords.NOT_LOGGED_IN.toByteArray(Charsets.UTF_8))
                         } ?: socket.write(JoozdlogCommsKeywords.SERVER_ERROR).also{
-                            log.e("server error while sending flights to ${socket.clientAddress}")
+                            log.e("server error while sending flights to ${socket.otherAddress}")
                         }
                     }
 
@@ -224,7 +222,7 @@ class Handler(private val socket: IOWorker): Closeable {
                                 socket.write(JoozdlogCommsKeywords.OK)
                                 log.v("Successfully saved all ${storage.flightsFile?.flights?.size} flights to disk for user ${storage.loginData.userName}", FLIGHTS_FILE_TAG)
                             } else {
-                                log.e("Write problem while writing flights to disk for ${socket.clientAddress}")
+                                log.e("Write problem while writing flights to disk for ${socket.otherAddress}")
                                 socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
                             }
                         }
@@ -241,14 +239,14 @@ class Handler(private val socket: IOWorker): Closeable {
                     }
 
                     else -> {                                               // unknown request will close connection
-                        log.v("unknown request: $request from ${socket.clientAddress}, closing connection")
+                        log.v("unknown request: $request from ${socket.otherAddress}, closing connection")
                         keepGoing = false
                     }
                 }
 
 
             } else {
-                log.n("Invalid request from ${socket.clientAddress}, stopping handleAll()", "Handler")
+                log.n("Invalid request from ${socket.otherAddress}, stopping handleAll()", "Handler")
                 keepGoing = false
             }
                                 
