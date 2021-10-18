@@ -28,7 +28,7 @@ class Logger(
     var level: Int = NORMAL,
     var addTimestamp: Boolean = false,
     var timestampFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd-kk:mm:ss.SSS"),
-    var showErrors: Boolean = true,
+    var showErrors: Boolean = false,
     var showWarnings: Boolean = true
 ): CoroutineScope {
     override val coroutineContext = Dispatchers.IO
