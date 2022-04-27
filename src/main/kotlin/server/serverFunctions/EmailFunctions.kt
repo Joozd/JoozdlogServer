@@ -41,7 +41,7 @@ object EmailFunctions {
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmm")
             val date = LocalDateTime.now().format(formatter)
             return sendMail(
-                content = "Hallon dit moet nog beter worden. Met HTML enzo. Maar voor nu: je backup csv dinges.\n\nVeel plezier!\nXOXO Joozd!",
+                content = "Your Joozdlog Backup CSV file.\n\nJust open this on a device with Joozdlog installed and you can import or replace all flights into your app.",
                 subject = "Joozdlog Backup CSV",
                 to = email,
                 htmlContent = MailsBuilder.buildBackupMailHtml(),
@@ -146,7 +146,7 @@ object EmailFunctions {
         // add attachment if any
         if (attachment != null && attachmentType != null && attachmentName != null)
             email.withAttachment(attachmentName, attachment, attachmentType)
-        else if (attachment != null && attachmentType != null && attachmentName != null)
+        else if (attachment != null || attachmentType != null || attachmentName != null)
             log.w("Attachment, attachment type or attachment name not null even though one or more of the others is", "sendMail()")
 
         /**
