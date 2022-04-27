@@ -24,6 +24,7 @@ import java.time.format.DateTimeFormatter
 class Logger(
     var verboseLogFile: File? = null,
     var logFile: File? = null,
+    var debugLogFile: File? = null,
     var outputToConsole: Boolean = false,
     var level: Int = NORMAL,
     var addTimestamp: Boolean = false,
@@ -80,9 +81,7 @@ class Logger(
     fun d(message: String) {
         launch {
             lineLock.withLock {
-                if (level == DEBUG) {
-                    verboseLogFile?.appendText("D/$timeStamp$message\n") ?: cOut("D/$timeStamp$message\n")
-                }
+                debugLogFile?.appendText("D/$timeStamp$message\n") ?: cOut("D/$timeStamp$message\n")
             }
         }
     }
