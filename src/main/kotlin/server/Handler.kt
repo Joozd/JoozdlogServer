@@ -22,11 +22,8 @@ import java.io.Closeable
 class Handler(private val socket: IOWorker): Closeable {
     private val log = Logger.singleton
 
-    private val TAG: String?
+    private val tag: String?
         get() = this::class.simpleName
-
-
-
 
     fun handleAll(){
         var keepGoing = true
@@ -108,7 +105,7 @@ class Handler(private val socket: IOWorker): Closeable {
                      * Expects a [LoginDataWithEmail] with key and possible email as extraData
                      */
                     JoozdlogCommsKeywords.UPDATE_PASSWORD -> {
-                        log.n("UPDATE PASSWORD received", TAG)
+                        log.n("UPDATE PASSWORD received", tag)
                         ServerFunctions.changePassword(socket, flightsStorage, extraData)?.let{
                             flightsStorage = it
                         }
@@ -159,7 +156,7 @@ class Handler(private val socket: IOWorker): Closeable {
                             socket.write(JoozdlogCommsKeywords.NOT_LOGGED_IN)
                         flightsStorage?.flightsFile?.let{ff ->
                             val timeStamp = unwrapLong(extraData)
-                            log.v("sending ${ff.flights.filter { it.timeStamp > timeStamp }.size} flights to client", TAG)
+                            log.v("sending ${ff.flights.filter { it.timeStamp > timeStamp }.size} flights to client", tag)
                             socket.write(flightsStorage?.filteredFlightsAsBytes { it.timeStamp > timeStamp } ?: JoozdlogCommsKeywords.NOT_LOGGED_IN.toByteArray(Charsets.UTF_8))
                         } ?: socket.write(JoozdlogCommsKeywords.SERVER_ERROR).also{
                             log.e("server error while sending flights to ${socket.otherAddress}")
