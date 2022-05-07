@@ -192,13 +192,12 @@ object ServerFunctions {
                 log.v("Sent login link to user ${loginData.userName}", "sendLoginLinkEmail")
             }
             FunctionResult.BAD_EMAIL_ADDRESS -> {
-                socket.sendError(JoozdlogCommsKeywords.NOT_A_VALID_EMAIL_ADDRESS)
-                log.v("Bad emailaddress \"${loginData.email}\" for user ${loginData.userName}", "sendLoginLinkEmail")
+                socket.sendError(JoozdlogCommsKeywords.EMAIL_NOT_KNOWN_OR_VERIFIED)
+                log.w("Emailaddress \"${loginData.email}\" provided for user ${loginData.userName} did not match stored hash.", "sendLoginLinkEmail")
             }
             else -> log.e("Invalid response from EmailFunctions.sendLoginLinkEmail(): $result")
         }
     }
-
 
 
     /**
