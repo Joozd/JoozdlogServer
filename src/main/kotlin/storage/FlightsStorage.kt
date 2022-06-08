@@ -131,6 +131,8 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
         }
     }
 
+    //returns amount of flights added or null if flightsFile is null (not logged in)
+    @Deprecated("but here for backwards compatibility")
     fun addFlights(rawData: ByteArray): Int? = flightsFile?.let { fFile ->
         // println("received ${serialized.size} flights")
         val newFlights = BasicFlightVersionFunctions.unpackWithVersion(rawData, requestedVersion)
@@ -142,6 +144,16 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
         newFlights.size
     }  // = null if flightsFile is null (not logged in)
 
+
+    //This is the new version. It immediately writes files to disk and doesn't touch timestamps.
+    fun addFlights(newFlights: Collection<BasicFlight>): Int? = flightsFile?.let { fFile ->
+        val newFlightIDs = newFlights.map{f -> f.flightID}
+        //build list of known flights + new flights, where duplicate IDs are overwritten by new flights
+        fFile.flights = (fFile.flights.filter{f -> f.flightID !in newFlightIDs} + newFlights).sortedBy { it.flightID }
+        writeFlightsToDisk()
+        newFlights.size
+    }
+
     fun writeFlightsToDisk(): Boolean = flightsFile?.let{ fFile ->
         log.d("Encrypting flights...")
         fFile.toEncryptedByteArray(loginData.password)?.let {
@@ -151,13 +163,6 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
             } // returned `null` will become `false`
         }
     } ?: false // if writeStuffToFile fails, or if flightsFile is null (not logged in)
-
-
-    fun flightsAsBytes(): ByteArray{
-        val ff = flightsFile
-        require (ff != null)
-        return BasicFlightVersionFunctions.makeVersionAndSerialize(ff.flights, requestedVersion)
-    }
 
     fun filteredFlightsAsBytes(predicate: (BasicFlight) -> Boolean): ByteArray? {
         val ff = flightsFile

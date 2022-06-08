@@ -163,6 +163,13 @@ class Handler(private val socket: IOWorker): Closeable {
                         }
                     }
 
+                    JoozdlogCommsKeywords.REQUEST_FLIGHTS_LIST_CHECKSUM -> ServerFunctions.sendFlightsListChecksum(socket, flightsStorage)
+
+                    JoozdlogCommsKeywords.REQUEST_ID_WITH_TIMESTAMPS_LIST -> ServerFunctions.sendIDsWithTimestampsList(socket, flightsStorage)
+
+                    JoozdlogCommsKeywords.REQUEST_FLIGHTS -> ServerFunctions.sendFlights(socket, flightsStorage, extraData)
+
+                    JoozdlogCommsKeywords.SENDING_NEWER_FLIGHTS -> ServerFunctions.receiveFlights(socket, flightsStorage, extraData)
 
                     /**
                      * receive consensus data to add or remove from consensus
@@ -185,16 +192,10 @@ class Handler(private val socket: IOWorker): Closeable {
                      */
                     JoozdlogCommsKeywords.SENDING_FEEDBACK -> ServerFunctions.receiveFeedback(socket, extraData)
 
-
-
-
-
-
                     /**
                      * Expects a single Long as `extraData`, to be taken as timestamp for this session
                      * Use this after sending flights as sending flights will update timestamp as well
                      */
-
                     JoozdlogCommsKeywords.ADD_TIMESTAMP -> {
                         val timestamp = unwrapLong(extraData)
                         flightsStorage?.flightsFile?.timestamp = timestamp
@@ -211,7 +212,6 @@ class Handler(private val socket: IOWorker): Closeable {
                     JoozdlogCommsKeywords.REQUEST_AIRPORT_DB_VERSION -> ServerFunctions.sendAirportDbVersion(socket)
 
                     JoozdlogCommsKeywords.REQUEST_AIRPORT_DB -> ServerFunctions.sendAirportDb(socket)
-
 
                     JoozdlogCommsKeywords.SAVE_CHANGES -> {
                         flightsStorage?.let { storage ->
@@ -240,7 +240,6 @@ class Handler(private val socket: IOWorker): Closeable {
                         keepGoing = false
                     }
                 }
-
 
             } else {
                 log.n("Invalid request from ${socket.otherAddress}, stopping handleAll()", "Handler")

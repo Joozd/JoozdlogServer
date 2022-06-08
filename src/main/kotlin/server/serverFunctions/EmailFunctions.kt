@@ -1,7 +1,6 @@
 package server.serverFunctions
 
 import data.email.EmailHashData
-import nl.joozd.joozdlogcommon.FeedbackData
 import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import org.simplejavamail.api.mailer.config.TransportStrategy
 import org.simplejavamail.email.EmailBuilder
@@ -89,28 +88,6 @@ object EmailFunctions {
             images = MailsBuilder.getImages("joozdlog_logo_email"),
             to = loginData.email)
     }
-
-    /**
-     * Send me (Joozd) an email with feedback from a Feedbackdata object
-     */
-    fun sendMeFeedbackMail(feedbackData: FeedbackData): FunctionResult{
-        log.d("sendMeFeedbackMail: Feedback: ${feedbackData.toString().take(50)}")
-        log.v("Feedback: ${feedbackData.toString().take(500)}", "Feedback")
-        return sendMail(
-            content = "***********************************\n" +
-                    "Feedback received from:\n" +
-                    "${feedbackData.contactInfo}\n" +
-                    "***********************************\n\n\n" +
-                    "***********************************\n" +
-                    "Contents:\n" +
-                    "${feedbackData.feedback}\n" +
-                    "***********************************\n" +
-                    "END OF FEEDBACK EMAIL",
-            subject = "Joozdlog Automated Feedback Mail",
-            to = "joozdlog@joozd.nl"
-        )
-    }
-
 
     /**
      * Placeholder mailer function.

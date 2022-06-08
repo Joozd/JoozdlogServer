@@ -1,12 +1,10 @@
 package server.serverFunctions
 
 import data.aircraft.AircraftTypesConsensus
+import data.feedback.FeedbackHandler
 import extensions.sendError
 import nl.joozd.comms.IOWorker
-import nl.joozd.joozdlogcommon.AircraftType
-import nl.joozd.joozdlogcommon.ConsensusData
-import nl.joozd.joozdlogcommon.FeedbackData
-import nl.joozd.joozdlogcommon.LoginDataWithEmail
+import nl.joozd.joozdlogcommon.*
 import nl.joozd.joozdlogcommon.comms.JoozdlogCommsKeywords
 import nl.joozd.serializing.*
 import storage.AirportsStorage
@@ -68,10 +66,10 @@ object ServerFunctions {
     }
 
     fun receiveFeedback(socket: IOWorker, extraData: ByteArray){
-        when (EmailFunctions.sendMeFeedbackMail(FeedbackData.deserialize(extraData))){
-            FunctionResult.SUCCESS -> socket.write(JoozdlogCommsKeywords.OK)
-            else -> socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
-        }
+        deserializeFeedbackData(extraData)?.let { feedbackData ->
+            FeedbackHandler.instance.addFeedback(feedbackData)
+            socket.ok()
+        } ?: socket.sendError(JoozdlogCommsKeywords.BAD_DATA_RECEIVED).also { log.w("Bad data received from ${socket.otherAddress}", "receiveFeedback")}
     }
 
 
@@ -241,15 +239,80 @@ object ServerFunctions {
         }
     }
 
+    /**
+     * Send checksum for flights in [flightsStorage] to [socket]
+     * can also send NOT_LOGGED_IN, or SERVER_ERROR if no file found.
+     */
+    fun sendFlightsListChecksum(socket: IOWorker, flightsStorage: FlightsStorage?){
+        if (flightsStorage?.correctKey != true) socket.sendError (JoozdlogCommsKeywords.NOT_LOGGED_IN)
+        else flightsStorage.flightsFile?.let{
+            socket.sendSerializable(FlightsListChecksum(it.flights))
+        } ?: socket.write(JoozdlogCommsKeywords.SERVER_ERROR).also{
+            log.e("server error in sendFlightsListChecksum() for user ${flightsStorage.loginData.userName} to ${socket.otherAddress} - flightsStorage.flightsFile == null")
+        }
+    }
+
+    /**
+     * Send list of IDs with timestamps for flights in [flightsStorage] to [socket]
+     * can also send NOT_LOGGED_IN, or SERVER_ERROR if no file found.
+     */
+    fun sendIDsWithTimestampsList(socket: IOWorker, flightsStorage: FlightsStorage?) {
+        if (flightsStorage?.correctKey != true) socket.sendError(JoozdlogCommsKeywords.NOT_LOGGED_IN)
+        else flightsStorage.flightsFile?.let {
+            socket.sendSerializable(it.flights.map { f -> IDWithTimeStamp(f) })
+        } ?: socket.write(JoozdlogCommsKeywords.SERVER_ERROR).also{ log.e("server error in sendIDsWithTimestampsList() for user ${flightsStorage.loginData.userName} to ${socket.otherAddress} - flightsStorage.flightsFile == null") }
+    }
+
+    /**
+     * Send list of IDs with timestamps for flights in [flightsStorage] to [socket]
+     * can also send NOT_LOGGED_IN, or SERVER_ERROR if no file found.
+     */
+    fun sendFlights(socket: IOWorker, flightsStorage: FlightsStorage?, extraData: ByteArray) {
+        if (flightsStorage?.correctKey != true) socket.sendError(JoozdlogCommsKeywords.NOT_LOGGED_IN)
+        else flightsStorage.flightsFile?.let {
+            getIDsFromExtraData(extraData)?.let { idsToSend ->
+                val flightsToSend = it.flights.filter { f -> f.flightID in idsToSend }
+                socket.sendSerializable(flightsToSend.map { f -> IDWithTimeStamp(f) })
+            } ?: socket.sendError(JoozdlogCommsKeywords.BAD_DATA_RECEIVED).also{ log.w("Received bad data in sendFlights() - first ${maxOf(20, extraData.size)} bytes are ${extraData.take(20)}; expected a wrapped list of Ints") }
+        } ?: socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR).also{ log.e("server error in sendFlights() for user ${flightsStorage.loginData.userName} to ${socket.otherAddress} - flightsStorage.flightsFile == null") }
+    }
+
+    fun receiveFlights(socket: IOWorker, flightsStorage: FlightsStorage?, extraData: ByteArray) {
+        if (flightsStorage?.correctKey != true) socket.sendError(JoozdlogCommsKeywords.NOT_LOGGED_IN)
+        else flightsStorage.flightsFile?.let {
+            getflightsFromExtraData(extraData)?.let{ newFlights ->
+                flightsStorage.addFlights(newFlights)?.let {
+                    socket.write(JoozdlogCommsKeywords.OK)
+                    log.v("received $it flights from client", "receiveFlights")
+                } ?: socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR).also{ log.e("error while adding flights for user ${flightsStorage.loginData.userName} from client ${socket.otherAddress}", "receiveFlights") }
+            } ?: socket.sendError(JoozdlogCommsKeywords.BAD_DATA_RECEIVED).also { log.w("Received bad data - first ${maxOf(20, extraData.size)} bytes are ${extraData.take(20)}; expected a packed list of BasicFlights", "receiveFlights") }
+        }?: socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR).also{ log.e("server error for user ${flightsStorage.loginData.userName} to ${socket.otherAddress} - flightsStorage.flightsFile == null", "receiveFlights") }
+    }
+
+    private fun getIDsFromExtraData(extraData: ByteArray): List<Int>? = try{
+        unwrapList(extraData)
+    } catch(e: Exception){
+        null
+    }
+
+    private fun getflightsFromExtraData(extraData: ByteArray): List<BasicFlight>? = try{
+        unpackSerialized(extraData){ BasicFlight.deserialize(it)}
+    } catch(e: Exception){
+        null
+    }
+
+    private fun deserializeFeedbackData(extraData: ByteArray): FeedbackData? = try{
+        FeedbackData.deserialize(extraData)
+    } catch(e: Exception) { null }
+
 
     private fun IOWorker.ok() = write(JoozdlogCommsKeywords.OK)
 
+    private fun IOWorker.sendSerializable(serializable: List<JoozdSerializable>) =
+        write(packSerializable(serializable))
 
-
-
-
-
-
+    private fun IOWorker.sendSerializable(serializable: JoozdSerializable) =
+        write(serializable.serialize())
 
 
 }
