@@ -35,7 +35,7 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
                 it.handleAll()
             }
         } catch (err: Throwable){
-            Logger.singleton.e("Error in JoozdlogServer.handle():\n${err.stackTraceToString()}")
+            Logger.singleton.c("Error in JoozdlogServer.handle():\n${err.stackTraceToString()}")
         }
     }
 
@@ -56,7 +56,7 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
                 level = Settings.logLevel
             }
             log.n(  "\n************************************\n" +
-                            "*** Starting JoozdlogServer 0014 ***\n" +
+                            "*** Starting JoozdlogServer 0015 ***\n" +
                             "*** Logging level: ${log.level.toString().padStart(2, ' ')}            ***\n" +
                             "************************************\n")
 

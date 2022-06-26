@@ -47,6 +47,7 @@ object UserAdministration {
         var randomUsername: String
         do { randomUsername = RandomGenerator(USERNAME_CHARACTERS).generateCode(USERNAME_LENGTH) }
         while (File(userFilesDirectory + randomUsername).exists())
+        log.d("made username $randomUsername")
         return randomUsername
     }
 

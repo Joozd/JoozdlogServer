@@ -34,8 +34,10 @@ object ServerFunctions {
     /**
      * Generate a username and send it to client in the form of a string.
      */
-    fun sendNewUsername(socket: IOWorker): Boolean =
-        socket.write(UserAdministration.generateUserName())
+    fun sendNewUsername(socket: IOWorker): Boolean {
+        log.d("sendNewUsername")
+        return socket.write(UserAdministration.generateUserName())
+    }
 
     /**
      * Sends current AircraftTypesConsensus.aircraftTypes to client
@@ -272,7 +274,7 @@ object ServerFunctions {
         else flightsStorage.flightsFile?.let {
             getIDsFromExtraData(extraData)?.let { idsToSend ->
                 val flightsToSend = it.flights.filter { f -> f.flightID in idsToSend }
-                socket.sendSerializable(flightsToSend.map { f -> IDWithTimeStamp(f) })
+                socket.sendSerializable(flightsToSend)
             } ?: socket.sendError(JoozdlogCommsKeywords.BAD_DATA_RECEIVED).also{ log.w("Received bad data in sendFlights() - first ${maxOf(20, extraData.size)} bytes are ${extraData.take(20)}; expected a wrapped list of Ints") }
         } ?: socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR).also{ log.e("server error in sendFlights() for user ${flightsStorage.loginData.userName} to ${socket.otherAddress} - flightsStorage.flightsFile == null") }
     }

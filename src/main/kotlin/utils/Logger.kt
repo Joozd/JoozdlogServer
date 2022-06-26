@@ -24,15 +24,17 @@ import java.time.format.DateTimeFormatter
 class Logger(
     var verboseLogFile: File? = null,
     var logFile: File? = null,
-    var debugLogFile: File? = null,
+    var debugLogFile: File = File("../log/debug.log"),
     var outputToConsole: Boolean = false,
-    var level: Int = NORMAL,
+    var level: Int = DEBUG,
     var addTimestamp: Boolean = false,
     var timestampFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd-kk:mm:ss.SSS"),
     var showErrors: Boolean = false,
     var showWarnings: Boolean = true
 ): CoroutineScope {
     override val coroutineContext = Dispatchers.IO
+
+    private val crashLogFile = File("../log/crashes.log")
 
     private val timeStamp: String
         get() = if (addTimestamp) "${LocalDateTime.now(ZoneOffset.UTC).format(timestampFormat)} - " else ""
@@ -74,14 +76,14 @@ class Logger(
 
     /**
      * Log something that is logged when debugging
-     * This will end up in verbose logfile when level is DEBUG.
+     * This will end up in debug logfile
      * Will never end up in normal logfile.
      * Debug messages do not have a tag.
      */
     fun d(message: String) {
         launch {
             lineLock.withLock {
-                debugLogFile?.appendText("D/$timeStamp$message\n") ?: cOut("D/$timeStamp$message\n")
+                debugLogFile.appendText("D/$timeStamp$message\n")
             }
         }
     }
@@ -132,7 +134,12 @@ class Logger(
                 }
             }
         }
+    }
 
+    fun c(crashMessage: String){
+        launch{
+            crashLogFile.appendText(timeStamp + crashMessage + "\n***********************************************************\n")
+        }
     }
 
     fun newLine(){

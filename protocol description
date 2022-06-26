@@ -29,7 +29,7 @@ Design:
 
 
 
-Protocol:
+Protocol OLD:
 - Client contacts server, saying username/password
 - Server checks if file [username] exists, if so, it loads flights/aircraft from files
 - server responds "OK" or "UNKNOWN_USER"<make registration for users?> or "WRONG_PASSWORD"
@@ -48,7 +48,12 @@ Protocol:
     - Client marks flights as "known to server"
     - Client saves timestamp as time of previous synch
 
-
+Protocol NEW:
+- Client makes a checksum of all its flightIDs and timestamps, asks server to do the same, compares these values.
+- If values match, they are done.
+- If not, client requests a list of IDs with timestamps, then all flights whose ID/timestamp values do not match
+    or that are unknown to client
+- Client adjusts its own new flights' FlightIDs and sends them to server
 
 
 <Same but for aircraft>

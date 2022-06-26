@@ -69,10 +69,10 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
      * unpackWithVersion takes care of upgrading to most recent version,
      */
 
-    val flightsFile: FlightsFile? by lazy { forcedFlightsFile ?:
-        if (!correctKey || file.length() < 32+4+8) null // might split this out and add logging or whatever
-        else {
-            try {
+    val flightsFile: FlightsFile? by lazy { forcedFlightsFile ?: when {
+        !correctKey -> null.also { log.d("Incorrect key, ${this::class.simpleName}")}
+        file.length() < 32+4+8 -> null.also { log.d("File too short: ${file.length()}, need ${32+4+8}")}
+        else -> try {
                 BufferedInputStream(file.inputStream()).use {
                     it.skip(32) // discard first 32 bytes as they are hash
                     val version = intFromBytes(it.readNBytes(4))
@@ -87,14 +87,14 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
                         BasicFlightVersionFunctions.unpackWithVersion(serializedFlights, version)
                     } ?: emptyList()
                     FlightsFile(timeStamp, flights)
-                    //TODO put this in a separate upgrader function
                 }
             } catch(e: Exception) {
-                e.printStackTrace()
+                Logger.singleton.d("Exception when getting flightsfile for user ${loginData.userName}:\n${e.stackTraceToString()}")
                 null
             }
         }
     }
+
 
     /**
      * Write stuff to file.
@@ -116,7 +116,7 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
             backupFile.delete()
             true
         } catch (e: Exception){
-            e.printStackTrace()
+            Logger.singleton.d("Exception when writing to flightsfile for user ${loginData.userName}:\n${e.stackTraceToString()}")
             false
         }
     }
