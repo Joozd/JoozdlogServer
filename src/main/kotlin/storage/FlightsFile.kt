@@ -2,6 +2,7 @@ package storage
 
 import crypto.AESCrypto
 import nl.joozd.joozdlogcommon.BasicFlight
+import nl.joozd.joozdlogcommon.utilities.checkForDuplicates
 import nl.joozd.serializing.toByteArray
 import nl.joozd.serializing.packSerialized
 
@@ -30,5 +31,13 @@ data class FlightsFile(var timestamp: Long, var flights: List<BasicFlight>) {
         }
         return null
     }
+
+    // Return true if flights were removed and this should be saved
+    fun removeDuplicates(): Int {
+        val duplicates = checkForDuplicates(flights)
+        flights = flights.filter { it !in duplicates}
+        return duplicates.size
+    }
+
     override fun toString() = "FlightsFile v. $version - timestamp $timestamp - ${flights.size} flights."
 }

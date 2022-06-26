@@ -55,8 +55,9 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
                 addTimestamp = true
                 level = Settings.logLevel
             }
-            log.n(  "\n************************************\n" +
-                            "*** Starting JoozdlogServer 0015 ***\n" +
+            log.n(  "\n" +
+                            "************************************\n" +
+                            "*** Starting JoozdlogServer 0016 ***\n" +
                             "*** Logging level: ${log.level.toString().padStart(2, ' ')}            ***\n" +
                             "************************************\n")
 

@@ -19,7 +19,7 @@ import java.time.Instant
 /**
  * IO for encrypted storage for flights
  * Files  structure:
- * - 32 bytes making a hash of the encryption key
+ * - [HASH_BYTES_SIZE] bytes making a hash of the encryption key
  * - 4 bytes stating it's version number (the version of BasicFlight used)
  *      - if version is 0, no flights stored (only hash, version, timestamp)
  * - 8 bytes making a timestamp of when the file was last saved
@@ -55,7 +55,7 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
         get() = file.exists()
 
     val correctKey: Boolean by lazy {
-        fileExists && file.readNBytes(32).contentEquals(hash)
+        fileExists && file.readNBytes(HASH_BYTES_SIZE).contentEquals(hash)
     }
 
 
@@ -69,30 +69,39 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
      * unpackWithVersion takes care of upgrading to most recent version,
      */
 
-    val flightsFile: FlightsFile? by lazy { forcedFlightsFile ?: when {
-        !correctKey -> null.also { log.d("Incorrect key, ${this::class.simpleName}")}
-        file.length() < 32+4+8 -> null.also { log.d("File too short: ${file.length()}, need ${32+4+8}")}
-        else -> try {
-                BufferedInputStream(file.inputStream()).use {
-                    it.skip(32) // discard first 32 bytes as they are hash
-                    val version = intFromBytes(it.readNBytes(4))
-                    val timeStamp = longFromBytes(it.readNBytes(8))
-                    val decryptedFlights = if (version == EMPTY_FLIGHT_LIST) null
-                        else AESCrypto.decrypt(loginData.password, it.readAllBytes().takeIf { b -> b.isNotEmpty() })
-                    println("decrypted ${decryptedFlights?.size} bytes")
-                    println("version is $version")
+    val flightsFile: FlightsFile? by lazy {
+        forcedFlightsFile ?: when {
+            !correctKey -> null.also { log.d("Incorrect key, ${this::class.simpleName}")}
 
+            file.length() < HASH_BYTES_SIZE+4+8 -> null.also { log.d("File too short: ${file.length()}, need ${HASH_BYTES_SIZE+4+8}")}
 
-                    val flights = decryptedFlights?.let { serializedFlights ->
-                        BasicFlightVersionFunctions.unpackWithVersion(serializedFlights, version)
-                    } ?: emptyList()
-                    FlightsFile(timeStamp, flights)
-                }
-            } catch(e: Exception) {
-                Logger.singleton.d("Exception when getting flightsfile for user ${loginData.userName}:\n${e.stackTraceToString()}")
-                null
+            else -> loadFLightsFile()?.apply {
+                removeDuplicates()
             }
         }
+    }
+
+
+
+    private fun loadFLightsFile(): FlightsFile? = try {
+        BufferedInputStream(file.inputStream()).use {
+            it.skip(HASH_BYTES_SIZE.toLong())
+            val version = intFromBytes(it.readNBytes(4))
+            val timeStamp = longFromBytes(it.readNBytes(8))
+            val decryptedFlights = if (version == EMPTY_FLIGHT_LIST) null
+            else AESCrypto.decrypt(loginData.password, it.readAllBytes().takeIf { b -> b.isNotEmpty() })
+            println("decrypted ${decryptedFlights?.size} bytes")
+            println("version is $version")
+
+
+            val flights = decryptedFlights?.let { serializedFlights ->
+                BasicFlightVersionFunctions.unpackWithVersion(serializedFlights, version)
+            } ?: emptyList()
+            FlightsFile(timeStamp, flights)
+        }
+    } catch (e: Exception) {
+        Logger.singleton.d("Exception when getting flightsfile for user ${loginData.userName}:\n${e.stackTraceToString()}")
+        null
     }
 
 
@@ -127,7 +136,7 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
         else {
             println("Hashed key: \n")
             println("\nExpected key: \n")
-            println(file.readNBytes(32).toList())
+            println(file.readNBytes(HASH_BYTES_SIZE).toList())
         }
     }
 
@@ -197,5 +206,7 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
             SHACrypto.hashWithExtraSalt(loginData.userName, loginData.password)
         const val EMPTY_FLIGHT_LIST = 0
         const val BACKUP_APPENDIX = ".backup"
+
+        const val HASH_BYTES_SIZE = 32
     }
 }

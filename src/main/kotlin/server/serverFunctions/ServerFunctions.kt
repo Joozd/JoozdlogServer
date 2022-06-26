@@ -249,6 +249,7 @@ object ServerFunctions {
         if (flightsStorage?.correctKey != true) socket.sendError (JoozdlogCommsKeywords.NOT_LOGGED_IN)
         else flightsStorage.flightsFile?.let{
             socket.sendSerializable(FlightsListChecksum(it.flights))
+            log.d("Sent checksum: ${FlightsListChecksum(it.flights)}")
         } ?: socket.write(JoozdlogCommsKeywords.SERVER_ERROR).also{
             log.e("server error in sendFlightsListChecksum() for user ${flightsStorage.loginData.userName} to ${socket.otherAddress} - flightsStorage.flightsFile == null")
         }
