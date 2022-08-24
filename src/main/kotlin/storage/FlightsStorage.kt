@@ -162,7 +162,8 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
     }
 
     fun removeDuplicates(): Boolean{
-        flightsFile?.removeDuplicates()
+        val result = flightsFile?.removeDuplicates()
+        Logger.singleton.v("Removed $result duplicate entries for user ${loginData.userName}")
         return writeFlightsToDisk()
     }
 
