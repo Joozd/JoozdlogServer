@@ -9,6 +9,8 @@ import java.io.*
 import java.net.ServerSocket
 import java.net.Socket
 
+private const val VERSION = 17
+
 /**
  * Constructs a ClassFileServer.
  */
@@ -57,7 +59,7 @@ class JoozdlogServer (ss: ServerSocket?) : ClassServer(ss)
             }
             log.n(  "\n" +
                             "************************************\n" +
-                            "*** Starting JoozdlogServer 0016 ***\n" +
+                            "*** Starting JoozdlogServer ${VERSION.toString().padStart(4, '0')} ***\n" +
                             "*** Logging level: ${log.level.toString().padStart(2, ' ')}            ***\n" +
                             "************************************\n")
 

@@ -1,6 +1,7 @@
 package data.email
 
 import crypto.SHACrypto
+import utils.Logger
 import java.io.File
 import java.io.FileNotFoundException
 import java.security.SecureRandom
@@ -21,9 +22,6 @@ class EmailHashFile(private val file: File) {
         field = it
         file.writeBytes(it.serialize())
     }
-
-    val confirmed
-        get() = hashData?.confirmed
 
     /**
      * Verify if an email matches it's confirmed hash
@@ -48,13 +46,17 @@ class EmailHashFile(private val file: File) {
         }
     }
 
-    /**
-     * Set [hashData.confirmed] to true if [hash] matches [hashData.hash]
-     * @return true if set to true, false if incorrect, null if hashData is null
+    /*
+     * Set hashData.confirmed to true if  param hash matches hashData.hash
+     * return true if set to true, false if incorrect, null if hashData is null
      */
-    fun confirm(hash: ByteArray): Boolean? = hashData?.let{hd ->
-        hd.hash.contentEquals(hash).also{
-            if (it) hashData = hd.copy(confirmed = true)
+    fun confirm(hash: ByteArray): Boolean? {
+        Logger.singleton.d("hashData = $hashData")
+        Logger.singleton.d("hash = $hashData")
+        return hashData?.let { hd ->
+            hd.hash.contentEquals(hash).also {
+                if (it) hashData = hd.copy(confirmed = true)
+            }
         }
     }
 }

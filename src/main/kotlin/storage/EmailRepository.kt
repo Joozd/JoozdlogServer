@@ -4,6 +4,7 @@ import data.email.EmailHashData
 import data.email.EmailHashFile
 import nl.joozd.joozdlogcommon.LoginDataWithEmail
 import settings.Settings
+import utils.Logger
 
 /**
  * Object to use for retrieving and storing verification data for email addresses
@@ -24,8 +25,10 @@ object EmailRepository {
      * check if hash matches if so, confirm it.
      * @return true if set to true, false if incorrect, null if hashData is null (eg. file does not exist)
      */
-    fun tryToConfirmEmail(username: String, hash: ByteArray): Boolean? =
-        EmailHashFile(userFilesDirectory + username).confirm(hash)
+    fun tryToConfirmEmail(username: String, hash: ByteArray): Boolean? {
+        Logger.singleton.d("Trying to confirm hash for $username")
+        return EmailHashFile(userFilesDirectory + username).confirm(hash)
+    }
 
 
     /**

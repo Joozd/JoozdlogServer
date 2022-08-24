@@ -173,7 +173,9 @@ object ServerFunctions {
      */
     fun confirmEmail(socket: IOWorker, extraData: ByteArray){
         try{
+
             unwrapString(extraData).split(":").let{
+                log.d("confirmEmail got string: ${it.joinToString((":"))}")
                 when(EmailRepository.tryToConfirmEmail(it.first(), Base64.getDecoder().decode(it.last()))){
                     true -> socket.ok()
                     false -> socket.sendError(JoozdlogCommsKeywords.EMAIL_NOT_KNOWN_OR_VERIFIED)

@@ -15,7 +15,7 @@ import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import javax.activation.FileDataSource
+import jakarta.activation.FileDataSource
 
 object EmailFunctions {
     private val log = Logger.singleton
