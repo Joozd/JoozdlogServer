@@ -75,9 +75,7 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
 
             file.length() < HASH_BYTES_SIZE+4+8 -> null.also { log.d("File too short: ${file.length()}, need ${HASH_BYTES_SIZE+4+8}")}
 
-            else -> loadFLightsFile()?.apply {
-                removeDuplicates()
-            }
+            else -> loadFLightsFile()
         }
     }
 
@@ -161,6 +159,11 @@ class FlightsStorage(val loginData: LoginData, private val forcedFlightsFile: Fl
         fFile.flights = (fFile.flights.filter{f -> f.flightID !in newFlightIDs} + newFlights).sortedBy { it.flightID }
         writeFlightsToDisk()
         newFlights.size
+    }
+
+    fun removeDuplicates(): Boolean{
+        flightsFile?.removeDuplicates()
+        return writeFlightsToDisk()
     }
 
     fun writeFlightsToDisk(): Boolean = flightsFile?.let{ fFile ->

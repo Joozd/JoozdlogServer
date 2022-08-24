@@ -238,7 +238,7 @@ object ServerFunctions {
      */
     fun sendTestEmail(socket: IOWorker){
         when (EmailFunctions.sendTestEmail()){
-            FunctionResult.SUCCESS -> socket.write(JoozdlogCommsKeywords.OK)
+            FunctionResult.SUCCESS -> socket.ok()
             else -> socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
         }
     }
@@ -292,6 +292,15 @@ object ServerFunctions {
                 } ?: socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR).also{ log.e("error while adding flights for user ${flightsStorage.loginData.userName} from client ${socket.otherAddress}", "receiveFlights") }
             } ?: socket.sendError(JoozdlogCommsKeywords.BAD_DATA_RECEIVED).also { log.w("Received bad data - first ${maxOf(20, extraData.size)} bytes are ${extraData.take(20)}; expected a packed list of BasicFlights", "receiveFlights") }
         }?: socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR).also{ log.e("server error for user ${flightsStorage.loginData.userName} to ${socket.otherAddress} - flightsStorage.flightsFile == null", "receiveFlights") }
+    }
+
+    fun killDuplicates(socket: IOWorker, flightsStorage: FlightsStorage?){
+        if (flightsStorage?.correctKey != true) socket.sendError(JoozdlogCommsKeywords.NOT_LOGGED_IN)
+        else {
+            if(flightsStorage.removeDuplicates())
+                socket.ok()
+            else socket.sendError(JoozdlogCommsKeywords.SERVER_ERROR)
+        }
     }
 
     private fun getIDsFromExtraData(extraData: ByteArray): List<Int>? = try{

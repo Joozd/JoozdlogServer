@@ -171,6 +171,8 @@ class Handler(private val socket: IOWorker): Closeable {
 
                     JoozdlogCommsKeywords.SENDING_NEWER_FLIGHTS -> ServerFunctions.receiveFlights(socket, flightsStorage, extraData)
 
+                    JoozdlogCommsKeywords.KILL_DUPLICATES -> ServerFunctions.killDuplicates(socket, flightsStorage)
+
                     /**
                      * receive consensus data to add or remove from consensus
                      * extraData should be packedList of ConsensusData.serialize()
