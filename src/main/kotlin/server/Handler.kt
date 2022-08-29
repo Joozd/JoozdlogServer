@@ -173,12 +173,14 @@ class Handler(private val socket: IOWorker): Closeable {
 
                     JoozdlogCommsKeywords.KILL_DUPLICATES -> ServerFunctions.killDuplicates(socket, flightsStorage)
 
-                    /**
-                     * receive consensus data to add or remove from consensus
-                     * extraData should be packedList of ConsensusData.serialize()
+                    /*
+                     * No longer in use, here for people with old versions. Remove by 01-09-2023.
                      */
-                    JoozdlogCommsKeywords.SENDING_AIRCRAFT_CONSENSUS -> ServerFunctions.addCToConsensus(socket, extraData)
+                    JoozdlogCommsKeywords.SENDING_AIRCRAFT_CONSENSUS -> ServerFunctions.addCToConsensus(socket)
 
+                    /*
+                     * No longer in use, here for people with old versions. Remove by 01-09-2023.
+                     */
                     JoozdlogCommsKeywords.REQUEST_AIRCRAFT_CONSENSUS -> ServerFunctions.getAircraftConsensus(socket)
 
                     JoozdlogCommsKeywords.REQUEST_AIRCRAFT_TYPES -> ServerFunctions.sendAircraftTypes(socket)

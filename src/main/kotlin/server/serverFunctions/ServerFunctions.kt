@@ -1,13 +1,11 @@
 package server.serverFunctions
 
-import data.aircraft.AircraftTypesConsensus
 import data.feedback.FeedbackHandler
 import extensions.sendError
 import nl.joozd.comms.IOWorker
 import nl.joozd.joozdlogcommon.*
 import nl.joozd.joozdlogcommon.comms.JoozdlogCommsKeywords
 import nl.joozd.serializing.*
-import storage.AirportsStorage
 import storage.EmailRepository
 import storage.FlightsStorage
 import storage.UserAdministration
@@ -18,7 +16,6 @@ import java.util.*
 
 
 object ServerFunctions {
-    private const val CONSENSUS_TAG = "Consensus"
     private const val CHANGE_PASSWORD_TAG = "ChangePassword"
 
     private val log = Logger.singleton
@@ -39,31 +36,39 @@ object ServerFunctions {
         return socket.write(UserAdministration.generateUserName())
     }
 
-    /**
-     * Sends current AircraftTypesConsensus.aircraftTypes to client
-     * @param socket: IOWorker to take care of transmission to client
-     * @return true if success, false if exception caught
+    /*
+     * No longer functional. Only to prevent errors on un-updated appes. Remove by 2023-09-01
      */
     fun sendAircraftTypes(socket: IOWorker): Boolean {
-        val acTypes: List<AircraftType> = AircraftTypesConsensus.getInstance().aircraftTypes
-        val payload = packSerialized(acTypes.map { it.serialize() })
+        log.v("Deprecated function [sendAircraftTypes] used by ${socket.otherAddress}")
+        val payload = packSerialized(emptyList())
         return socket.write(payload)
     }
 
+    /*
+     * No longer functional. Only to prevent errors on un-updated appes. Remove by 2023-09-01
+     */
     fun sendAircraftTypesVersion(socket: IOWorker): Boolean {
-        val version: Int = AircraftTypesConsensus.getInstance().aircraftTypesVersion
-        val payload = wrap(version)
+        log.v("Deprecated function [sendAircraftTypesVersion] used by ${socket.otherAddress}")
+        val payload = wrap(-1)
         return socket.write(payload)
     }
 
+    /*
+     * No longer functional. Only to prevent errors on un-updated appes. Remove by 2023-09-01
+     */
     fun sendForcedTypesVersion(socket: IOWorker): Boolean {
-        val version: Int = AircraftTypesConsensus.getInstance().forcedTypesVersion
-        val payload = wrap(version)
+        log.v("Deprecated function [sendForcedTypesVersion] used by ${socket.otherAddress}")
+        val payload = wrap(-1)
         return socket.write(payload)
     }
 
+    /*
+     * No longer functional. Only to prevent errors on un-updated appes. Remove by 2023-09-01
+     */
     fun sendForcedTypes(socket: IOWorker): Boolean {
-        val payload = AircraftTypesConsensus.getInstance().serializedForcedTypes
+        log.v("Deprecated function [sendForcedTypes] used by ${socket.otherAddress}")
+        val payload = packSerialized(emptyList())
         return socket.write(payload)
     }
 
@@ -75,53 +80,38 @@ object ServerFunctions {
     }
 
 
-    /**
-     * Add or remove consensus data to or from a registration
+    /*
+     * No longer functional. Only to prevent errors on un-updated appes. Remove by 2023-09-01
      */
-    fun addCToConsensus(socket: IOWorker, extraData: ByteArray) {
-        with(AircraftTypesConsensus.getInstance()) {
-            unpackSerialized(extraData).map { ConsensusData.deserialize(it) }
-                .also {
-                    log.v("Received ${it.size} Consensus instructions", CONSENSUS_TAG)
-                }
-                .forEach {
-                    if (it.subtract)
-                        removeCounter(it.registration, it.aircraftType)
-                    else
-                        addCounter(it.registration, it.aircraftType)
-                    writeConsensusMapToFile()
-                }
-        }
-        socket.write(JoozdlogCommsKeywords.OK)
+    fun addCToConsensus(socket: IOWorker) {
+        log.v("Deprecated function [addCToConsensus] used by ${socket.otherAddress}")
+        socket.ok()
     }
 
-    fun getAircraftConsensus(socket: IOWorker): Boolean =
-        socket.write(AircraftTypesConsensus.getInstance().also {
-            log.v("Sending ${it.consensus.size} Consensus records", CONSENSUS_TAG)
-        }.toByteArray())
-
-
-    /**
-     * Sends current Airports to client
-     * @param socket: IOWorker to take care of transmission to client
-     * @return true if success, false if exception caught
+    /*
+     * No longer functional. Only to prevent errors on un-updated appes. Remove by 2023-09-01
      */
-    fun sendAirportDb(socket: IOWorker): Boolean =
-        if (AirportsStorage.fileExists)
-            socket.write(AirportsStorage.airportData)
-        else
-            socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
+    fun getAircraftConsensus(socket: IOWorker) {
+        log.v("Deprecated function [getAircraftConsensus] used by ${socket.otherAddress}")
+        socket.write(emptyMap<String, ByteArray>().toByteArray())
+    }
 
-    /**
-     * Sends current Airport DB Version to client
-     * @param socket: IOWorker to take care of transmission to client
-     * @return true if success, false if exception caught
+    /*
+     * No longer functional. Only to prevent errors on un-updated appes. Remove by 2023-09-01
      */
-    fun sendAirportDbVersion(socket: IOWorker): Boolean =
-        if (AirportsStorage.fileExists)
-            socket.write(wrap(AirportsStorage.version))
-        else
-            socket.write(wrap(-1)) // -1 means SERVER_ERROR in this case
+    fun sendAirportDb(socket: IOWorker) {
+        log.v("Deprecated function [sendAirportDb] used by ${socket.otherAddress}")
+        socket.write(JoozdlogCommsKeywords.SERVER_ERROR)
+    }
+
+    /*
+     * No longer functional. Only to prevent errors on un-updated appes. Remove by 2023-09-01
+     */
+    fun sendAirportDbVersion(socket: IOWorker) {
+        log.v("Deprecated function [sendAirportDbVersion] used by ${socket.otherAddress}")
+        socket.write(wrap(-1)) // -1 means SERVER_ERROR in this case
+    }
+
 
     /**
      * Changes a password.
