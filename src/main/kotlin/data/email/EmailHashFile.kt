@@ -4,7 +4,6 @@ import crypto.SHACrypto
 import utils.Logger
 import java.io.File
 import java.io.FileNotFoundException
-import java.security.SecureRandom
 
 /**
  * This will represent the email hash data for a user
@@ -15,9 +14,10 @@ import java.security.SecureRandom
  */
 class EmailHashFile(private val file: File) {
     constructor(fileName: String): this(File(fileName))
+    val username = file.name
 
-    private var hashData: EmailHashData? = try { EmailHashData.deserialize(file.readBytes()) } catch(e: FileNotFoundException) { null }
-    set(it){
+    var hashData: EmailHashData? = try { EmailHashData.deserialize(file.readBytes()) } catch(e: FileNotFoundException) { null }
+    private set(it){
         require (it != null) { "Do not set hashData to null (error EmailHashFile001)"}
         field = it
         file.writeBytes(it.serialize())
@@ -28,7 +28,7 @@ class EmailHashFile(private val file: File) {
      */
     fun verifyEmail(email: String): Boolean{
         return hashData?.let{
-            SHACrypto.hashWithSalt(it.salt, email).contentEquals(it.hash) && it.confirmed
+            SHACrypto.hash(email, it.salt).contentEquals(it.hash) && it.confirmed
         } ?: false
     }
 
@@ -39,8 +39,8 @@ class EmailHashFile(private val file: File) {
      * @return the data just created
      */
     fun create(email: String): EmailHashData{
-        val salt = ByteArray(16).apply{SecureRandom().nextBytes(this)}
-        val hash = SHACrypto.hashWithSalt(salt, email)
+        val salt = SHACrypto.generateRandomSalt()
+        val hash = SHACrypto.hash(email, salt)
         return EmailHashData(salt, hash, false).also{
             hashData = it
         }
