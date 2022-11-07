@@ -40,7 +40,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$KOTLIN_COROUTINES_VERSION"
 
 
-    implementation("org.bouncycastle:bcprov-jdk16:1.46")
+    // implementation("org.bouncycastle:bcprov-jdk16:1.46")
 
     implementation 'jakarta.activation:jakarta.activation-api:2.1.0'
     implementation 'org.simplejavamail:simple-java-mail:7.5.0'
