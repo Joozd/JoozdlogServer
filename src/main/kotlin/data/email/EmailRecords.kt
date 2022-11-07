@@ -6,6 +6,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import utils.Logger
 import java.time.Instant
 
 //This takes care of lastAccessed tracking.
@@ -50,10 +51,10 @@ class EmailRecords private constructor() {
 
     fun getEmailDataRecordForUser(id: Long): EmailDataRecord? =
         transaction {
-            EmailDataDao.findById(id)
-        }?.let{
-            it.lastAccessed = now
-            EmailDataRecord(it)
+            EmailDataDao.findById(id)?.let {
+                it.lastAccessed = now
+                EmailDataRecord(it)
+            }
         }
 
     /**
@@ -72,7 +73,7 @@ class EmailRecords private constructor() {
     // This only updates lastAccessed on good hash
     fun confirmEmail(confirmationString: String): Boolean? {
         val id = getIDFromConfirmationString(confirmationString)
-        val recordToConfirm = EmailDataDao.findById(id) ?: return null
+        val recordToConfirm = transaction { EmailDataDao.findById(id) } ?: return null
         return (confirmationString == EmailDataRecord(recordToConfirm).confirmationString()).also{
             if (it)
                 markAsVerified(recordToConfirm)
@@ -128,7 +129,7 @@ class EmailRecords private constructor() {
 
 
     companion object{
-        const val DATABASE_LOCATION = "./data/email_db"
+        const val DATABASE_LOCATION = "../data/email_db"
 
         private val INSTANCE by lazy{ EmailRecords() }
         private var initialized = false
@@ -136,10 +137,13 @@ class EmailRecords private constructor() {
             if (initialized)
                 INSTANCE
             else {
+                Logger.singleton.d("Making an email DB instance....")
                 Database.connect("jdbc:h2:file:$DATABASE_LOCATION")
+                Logger.singleton.d("Connected to DB!")
                 transaction {
                     SchemaUtils.create(EmailDataTable)
                 }
+                Logger.singleton.d("made an email DB instance!")
                 INSTANCE
             }
     }

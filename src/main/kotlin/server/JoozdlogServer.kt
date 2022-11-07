@@ -9,7 +9,7 @@ import java.io.*
 import java.net.ServerSocket
 import java.net.Socket
 
-private const val VERSION = 18
+private const val VERSION = 21
 
 /**
  * Constructs a ClassFileServer.

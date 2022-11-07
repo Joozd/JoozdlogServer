@@ -41,9 +41,8 @@ dependencies {
 
 
     // implementation("org.bouncycastle:bcprov-jdk16:1.46")
+    implementation "com.sun.mail:javax.mail:1.6.2"
 
-    implementation 'jakarta.activation:jakarta.activation-api:2.1.0'
-    implementation 'org.simplejavamail:simple-java-mail:7.5.0'
 
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
     testCompile group: 'junit', name: 'junit', version: '4.12'

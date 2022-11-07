@@ -8,6 +8,7 @@ import nl.joozd.joozdlogcommon.comms.JoozdlogCommsResponses
 import nl.joozd.serializing.*
 import p2p.P2PCenter
 import data.email.EmailRepository
+import server.serverFunctions.mail.EmailFunctions
 import utils.Logger
 
 object ServerFunctions {
@@ -24,14 +25,19 @@ object ServerFunctions {
      * attempt to set email to "confirmed" for user. Expects a wrapped string with [username:hashAsBase64]]
      */
     fun confirmEmail(socket: IOWorker, extraData: ByteArray){
-        try{
-            val confirmationString: String = unwrap(extraData)
-            when(EmailRepository.confirmEmail(confirmationString)){
+        val confirmationString: String = try {
+            unwrap(extraData)
+        } catch (e: IllegalStateException) {
+            socket.sendError(JoozdlogCommsResponses.BAD_DATA_RECEIVED, e.stackTraceToString())
+            return
+        }
+        try {
+            when (EmailRepository.confirmEmail(confirmationString)) {
                 true -> socket.ok()
                 false -> socket.sendError(JoozdlogCommsResponses.EMAIL_NOT_KNOWN_OR_VERIFIED)
                 null -> socket.sendError(JoozdlogCommsResponses.ID_NOT_FOUND) // server error means ID not found on server
             }
-        } catch (e: Exception) { socket.sendError(JoozdlogCommsResponses.BAD_DATA_RECEIVED)}
+        } catch (e: IllegalStateException) { socket.sendError(JoozdlogCommsResponses.SERVER_ERROR, e.stackTraceToString())}
     }
 
     fun storeP2PData(ioWorker: IOWorker, extraData: ByteArray){
