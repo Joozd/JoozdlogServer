@@ -10,6 +10,8 @@ import server.serverFunctions.ServerFunctions
 import settings.Settings
 import utils.Logger
 import java.io.Closeable
+import javax.net.ssl.SSLException
+
 /**
  * Handler should get an open IOWorker upon construction
  * It will use this socket to do all kinds of things.
@@ -80,10 +82,15 @@ class Handler(private val ioWorker: IOWorker): Closeable {
                     keepGoing = false
                 }
             }
+            catch(e: SSLException){ // connection dropped instead of being nicely closed
+                keepGoing = false
+                log.d("Connection not nicely closed (SSLException: ${e.message})")
+            }
             catch (e: Exception){
                 log.w("Caught exception $e")
                 log.c("Error in JoozdlogServer.handle():\n${e.stackTraceToString()}")
                 ioWorker.sendError(JoozdlogCommsResponses.SERVER_ERROR)
+                keepGoing = false
             }
         }
     }
